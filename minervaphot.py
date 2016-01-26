@@ -11,7 +11,7 @@ import robust as rb
 import djs_phot_mb as djs
 from select import select
 import sys
-import string
+import strings
 import os
 import time
 import pickle

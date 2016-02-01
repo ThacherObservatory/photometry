@@ -1,5 +1,5 @@
 from length import length
-import ipdb
+import pdb
 import numpy as np
 import djs_photfrac_mb as djsphotfrac
 #------------------------------------------------------------------------------

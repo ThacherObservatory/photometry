@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import astropy.io.fits
+from astropy.io import fits
 from astropy import wcs
-import pyfits as pf
 import glob
 import astropy
 from astropysics.coords import AngularCoordinate as angcor
@@ -11,7 +10,7 @@ import robust as rb
 import djs_phot_mb as djs
 from select import select
 import sys
-import strings
+#import strings
 import os
 import time
 import pickle
@@ -107,7 +106,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
             break
 
         # Get image and header
-	data, header = pf.getdata(file, 0, header=True)
+	data, header = fits.getdata(file, 0, header=True)
                 
         # Get telescope RA and Dec as starting point
 
@@ -186,6 +185,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
     return
 
 
+
 #---------------------------------------------------------------------#
 # done_in:                                                             #
 #----------------------------------------------------------------------#
@@ -240,8 +240,8 @@ def done_in(tmaster):
 # get_files:                                                           #
 #----------------------------------------------------------------------#
 
-def get_files(prefix,dir="/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/data/2013Nov24/",
-              suffix='.fits'):
+def get_files(dir="/Users/jonswift/Astronomy/EBs/Data/MINERVA/2015Oct15/",
+              prefix='',tag='',suffix='.fits'):
     
     """
     Overview:
@@ -256,7 +256,7 @@ def get_files(prefix,dir="/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/da
     
     """
 
-    files = glob.glob(dir+prefix+"*"+suffix)
+    files = glob.glob(dir+prefix+"*"+tag+"*"+suffix)
     
     fct = len(files)
 
@@ -284,7 +284,7 @@ def check_ast(file):
 
     """
 
-    image, header = pf.getdata(file, 0, header=True)
+    image, header = fits.getdata(file, 0, header=True)
     status = 0
     try:
         crval1 = header["CRVAL1"]
@@ -294,7 +294,6 @@ def check_ast(file):
 
     return status
     
-
 
 #----------------------------------------------------------------------#
 # master_bias:
@@ -340,12 +339,12 @@ def master_bias(files,write=True,outdir='./',readnoise=False,clobber=False,verbo
 # Don't redo master_bias unless clobber keyword set
     if len(glob.glob(outdir+'master_bias.fits')) == 1 and not clobber:
         print "Master bias file already exists!"
-        master_bias = pf.getdata(outdir+'master_bias.fits',0,header=False)
+        master_bias = fits.getdata(outdir+'master_bias.fits',0,header=False)
         return master_bias
 
 # Get information from inputs and create stack array
     fct = len(files)
-    image, header = pf.getdata(files[0], 0, header=True)
+    image, header = fits.getdata(files[0], 0, header=True)
     ysz,xsz = image.shape
     stack = np.zeros((fct,ysz,xsz))
     temps = []   
@@ -353,7 +352,7 @@ def master_bias(files,write=True,outdir='./',readnoise=False,clobber=False,verbo
 # Load stack array and get CCD temperatures
     for i in np.arange(fct):
         print "Reading "+files[i].split('/')[-1]
-        image, header = pf.getdata(files[i], 0, header=True)
+        image, header = fits.getdata(files[i], 0, header=True)
         temps.append(header["CCD-TEMP"])
         stack[i,:,:] = image
 
@@ -429,26 +428,26 @@ def master_bias(files,write=True,outdir='./',readnoise=False,clobber=False,verbo
         name  = outdir+'master_bias'+tag
         plt.savefig(name+'.png',dpi=300)
 
-        hout = pf.Header()
-        hout.update(key="CCDTEMP", value=np.median(temps), comment="Median CCD temperature")
-        hout.update(key="TEMPSIG", value=np.std(temps), comment="CCD temperature RMS")
-        hout.update(key="BIAS", value=med, comment="Median bias level (cts)")
-        hout.update(key="BIASSIG", value=sig, comment="Bias RMS (cts)")
+        hout = fits.Header()
+        hout['CCDTEMP'] = (np.median(temps), "Median CCD temperature")
+        hout["TEMPSIG"] = (np.std(temps), "CCD temperature RMS")
+        hout["BIAS"] = (med, "Median bias level (cts)")
+        hout["BIASSIG"] = (sig, "Bias RMS (cts)")
         if len(glob.glob(name+'.fits')) == 1:
             os.system('rm '+name+'.fits')
         if float32:
-            pf.writeto(name+'.fits', np.float32(master_bias), hout)
+            fits.writeto(name+'.fits', np.float32(master_bias), hout)
         else:
-            pf.writeto(name+'.fits', master_bias, hout)
+            fits.writeto(name+'.fits', master_bias, hout)
 
         if readnoise:
             name  = outdir+'readnoise'+tag
             if len(glob.glob(name+'.fits')) == 1:
                 os.system('rm '+name+'.fits')
             if float32:
-                pf.writeto(name+'.fits', np.float32(rn), hout)
+                fits.writeto(name+'.fits', np.float32(rn), hout)
             else:
-                pf.writeto(name+'.fits', rn, hout)
+                fits.writeto(name+'.fits', rn, hout)
                 
     return master_bias
 
@@ -479,7 +478,6 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
     clobber     : Toggle to overwrite files if they already exist in outdir 
                   (default False)
 
- 
     Calling sequence:
     -----------------
     master_dark = master_dark(darkfiles,bias=master_bias,write=True,
@@ -490,12 +488,15 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
 # Don't redo master_dark unless clobber keyword set
     if len(glob.glob(outdir+'master_dark.fits')) == 1 and not clobber:
         print "Master dark already exists!"
-        master_dark = pf.getdata(outdir+'master_dark.fits',0,header=False)
+        master_dark = fits.getdata(outdir+'master_dark.fits',0,header=False)
         return master_dark
-
+    elif len(glob.glob(outdir+'master_dark.fits')) == 1:
+        print 'you need to remove file: '+glob.glob(outdir+'master_dark.fits')[0]
+        return
+    
  # Get information from inputs and create stack array
     fct = len(files)
-    image, header = pf.getdata(files[0], 0, header=True)
+    image, header = fits.getdata(files[0], 0, header=True)
     ysz,xsz = image.shape
     stack = np.zeros((fct,ysz,xsz))
     temps = []
@@ -504,7 +505,7 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
 # Load stack array and get CCD temperatures
     for i in np.arange(fct):
         print "Reading "+files[i].split('/')[-1]
-        image, header = pf.getdata(files[i], 0, header=True)
+        image, header = fits.getdata(files[i], 0, header=True)
         exp = header["EXPOSURE"]
         exps.append(exp)
         temps.append(header["CCD-TEMP"])
@@ -540,18 +541,18 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
     vmin = med - 2*sig
     vmax = med + 2*sig
     aspect = np.float(xsz)/np.float(ysz)
-    plt.figure(37,figsize=(5*aspect,5))
+    plt.figure(37,figsize=(5*aspect*1.2,5))
     plt.clf()
     plt.imshow(master_dark,vmin=vmin,vmax=vmax,cmap='gist_heat',interpolation='nearest',origin='lower')
     plt.colorbar()
-    plt.annotate('Dark Current = %.2f cts/sec' % med, [0.72,0.85],horizontalalignment='right',
+    plt.annotate('Dark Current = %.2f cts/sec' % med, [0.72,0.8],horizontalalignment='right',
                  xycoords='figure fraction',fontsize='large')
 #                 path_effects=[PathEffects.withStroke(linewidth=3,foreground="w")])
-    plt.annotate(r'$\sigma$ = %.2f cts/sec' % sig, [0.72,0.8],horizontalalignment='right',
+    plt.annotate(r'$\sigma$ = %.2f cts/sec' % sig, [0.72,0.75],horizontalalignment='right',
                  xycoords='figure fraction',fontsize='large')
 #                 path_effects=[PathEffects.withStroke(linewidth=3,foreground="w")])
     plt.annotate(r'$\langle T_{\rm CCD} \rangle$ = %.2f C' % np.median(temps), 
-                 [0.72,0.75],horizontalalignment='right',
+                 [0.72,0.7],horizontalalignment='right',
                  xycoords='figure fraction',fontsize='large')
 #                 path_effects=[PathEffects.withStroke(linewidth=3,foreground="w")])
     plt.title("Master Dark")
@@ -564,22 +565,22 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
 
         plt.savefig(name+'.png',dpi=300)
         
-        hout = pf.Header()
-        hout.update(key="TEMPMAX", value=tmax, comment="Maximum CCD temperature")
-        hout.update(key="TEMPMIN", value=tmax, comment="Maximum CCD temperature")
-        hout.update(key="TEMPMED", value=tmed, comment="Median CCD temperature")
-        hout.update(key="TEMPMN", value=tmean, comment="Mean CCD temperature")
-        hout.update(key="TEMPSIG", value=tsig, comment="CCD temperature RMS")
-        hout.update(key="EXPMAX", value=expmax, comment="Maximum exposure time")
-        hout.update(key="EXPMIN", value=expmax, comment="Minimum exposure time")
-        hout.update(key="DARKCNT", value=med, comment="Median dark current (cts/sec)")
-        hout.update(key="DARKSIG", value=sig, comment="Dark current RMS (cts/sec)")
+        hout = fits.Header()
+        hout["TEMPMAX"] = (tmax, "Maximum CCD temperature")
+        hout["TEMPMIN"] = (tmin, "Minimum CCD temperature")
+        hout["TEMPMED"] = (tmed, "Median CCD temperature")
+        hout["TEMPMN"] = (tmean, "Mean CCD temperature")
+        hout["TEMPSIG"] = (tsig, "CCD temperature RMS")
+        hout["EXPMAX"] = (expmax,"Maximum exposure time")
+        hout["EXPMIN"] = (expmin, "Minimum exposure time")
+        hout["DARKCNT"] = (med, "Median dark current (cts/sec)")
+        hout["DARKSIG"] = (sig, "Dark current RMS (cts/sec)")
         if len(glob.glob(name)) == 1:
             os.system('rm '+name+'.fits')
         if float32:
-            pf.writeto(name+'.fits', np.float32(master_dark), hout)
+            fits.writeto(name+'.fits', np.float32(master_dark), hout)
         else:
-            pf.writeto(name+'.fits', master_dark, hout)
+            fits.writeto(name+'.fits', master_dark, hout)
  
     return master_dark
 
@@ -626,12 +627,12 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
 # Don't redo master_dark unless clobber keyword set
     if len(glob.glob(outdir+'master_flat'+suffix+'.fits')) == 1 and not clobber:
         print "Master flat already exists!"
-        master_flat = pf.getdata(outdir+'master_flat'+suffix+'.fits',0, header=False)
+        master_flat = fits.getdata(outdir+'master_flat'+suffix+'.fits',0, header=False)
         return master_flat
 
  # Get information from inputs and create stack array
     fct = len(files)
-    image, header = pf.getdata(files[0], 0, header=True)
+    image, header = fits.getdata(files[0], 0, header=True)
     filter = header["filter"]
 
     ysz,xsz = image.shape
@@ -641,7 +642,8 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
     meds = []   
     for i in np.arange(fct):
         print "Reading "+files[i].split('/')[-1]
-        image, header = pf.getdata(files[i], 0, header=True)
+        image, header = fits.getdata(files[i], 0, header=True)
+        image = np.float32(image)
         if header["filter"] != filter:
             sys.exit("Filters do not match!")
         if bias != None:
@@ -664,7 +666,7 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
     vmin = med - stretch*sig
     vmax = med + stretch*sig
     aspect = np.float(xsz)/np.float(ysz)
-    plt.figure(40,figsize=(5*aspect,5))
+    plt.figure(40,figsize=(5*aspect*1.2,5))
     plt.clf()
     plt.imshow(master_flat,vmin=vmin,vmax=vmax,cmap='gist_heat',interpolation='nearest',origin='lower')
     plt.colorbar()
@@ -676,10 +678,10 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
 # Write out plot and master flat array
     if write:
         plt.savefig(outdir+'master_flat'+suffix+'.png',dpi=300)
-        hout = pf.Header()
-        hout.update(key="FILTER", value=filter, comment="Filter used when taking image")
-        hout.update(key="MEDCTS", value=med, comment="Median counts in individual flat frames")
-        hout.update(key="MEDSIG", value=sig, comment="Median count RMS in individual flat frames")
+        hout = fits.Header()
+        hout["FILTER"] = (filter, "Filter used when taking image")
+        hout["MEDCTS"] = (med, "Median counts in individual flat frames")
+        hout["MEDSIG"] = (sig, "Median count RMS in individual flat frames")
         if bias != None:
             hout.add_comment("Bias subtracted")
         if dark != None:
@@ -688,15 +690,11 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
         if len(glob.glob(outdir+'master_flat'+suffix+'.fits')) == 1:
             os.system('rm '+outdir+'master_flat'+suffix+'.fits')
         if float32:
-            pf.writeto(outdir+'master_flat'+suffix+'.fits', np.float32(master_flat), hout)
+            fits.writeto(outdir+'master_flat'+suffix+'.fits', np.float32(master_flat), hout)
         else:
-            pf.writeto(outdir+'master_flat'+suffix+'.fits', master_flat, hout)
+            fits.writeto(outdir+'master_flat'+suffix+'.fits', master_flat, hout)
             
     return master_flat
-
-
-
-
 
 
 
@@ -716,7 +714,7 @@ def brightest_star(file,min_distance=10,show=True,threshold_abs=None):
     from skimage.feature import peak_local_max
     from skimage import data, img_as_float
     
-    image, header = pf.getdata(file, 0, header=True)
+    image, header = fits.getdata(file, 0, header=True)
     if threshold_abs == None:
         threshold_abs = np.median(image) + 10.0*rb.std(image)
 
@@ -769,7 +767,7 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
     dec0 = angcor(target_dec).d
 
 # Read image 
-    image = pf.getdata(file, 0, header=False)
+    image = fits.getdata(file, 0, header=False)
     ysz,xsz = image.shape
     if bias != None:
         image -= bias
@@ -978,7 +976,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     if SpT == None:
         sys.exit("Must supply source spectral type")
 
-    image,header = pf.getdata(file, 0, header=True)
+    image,header = fits.getdata(file, 0, header=True)
     exptime = header["exptime"]
     if ra == None:
         object = header["object"]
@@ -1147,7 +1145,7 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
     if SpT == None:
         sys.exit("Must supply source spectral type")
 
-    image,header = pf.getdata(files[0], 0, header=True)
+    image,header = fits.getdata(files[0], 0, header=True)
 
 
     if not object:
@@ -1208,7 +1206,7 @@ def do_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,
             bias=None,flat=None):
     
 # Get image and header
-    image, header = pf.getdata(file, 0, header=True)
+    image, header = fits.getdata(file, 0, header=True)
 
 # Apply calibrations if provided
     if bias != None:
@@ -1278,7 +1276,7 @@ def do_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,
 def simple_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,bias=None,flat=None):
     
 # Get image and header
-    image, header = pf.getdata(file, 0, header=True)
+    image, header = fits.getdata(file, 0, header=True)
 
 # Apply calibrations if provided
     if bias != None:

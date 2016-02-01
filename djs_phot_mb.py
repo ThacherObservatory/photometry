@@ -5,7 +5,7 @@ import djs_photcen_mb as djsphotcen
 import djs_photfrac_mb as djsphotfrac
 from length import length
 import numpy as np
-import ipdb
+import pdb
 
 #------------------------------------------------------------------------------
 #+

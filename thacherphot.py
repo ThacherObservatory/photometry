@@ -19,7 +19,7 @@ from length import *
 import scipy as sp
 import constants as c
 import matplotlib.patheffects as PathEffects
-
+import time
 #----------------------------------------------------------------------
 # Minerva Photometry Reduction Pipeline:
 #
@@ -509,7 +509,7 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
         exp = header["EXPOSURE"]
         exps.append(exp)
         temps.append(header["CCD-TEMP"])
-        if bias == None:
+        if length(bias) == 1:
             image /= exp
         else:
             image = (image-bias)/exp
@@ -646,9 +646,9 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
         image = np.float32(image)
         if header["filter"] != filter:
             sys.exit("Filters do not match!")
-        if bias != None:
+        if length(bias) > 1:
             image -= bias
-        if dark != None:
+        if length(dark) > 1:
             image -= dark
         meds.append(np.median(image))
         stack[i,:,:] = image/np.median(image)
@@ -682,9 +682,9 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
         hout["FILTER"] = (filter, "Filter used when taking image")
         hout["MEDCTS"] = (med, "Median counts in individual flat frames")
         hout["MEDSIG"] = (sig, "Median count RMS in individual flat frames")
-        if bias != None:
+        if length(bias) > 1:
             hout.add_comment("Bias subtracted")
-        if dark != None:
+        if length(dark) > 1:
             hout.add_comment("Dark subtracted")
 
         if len(glob.glob(outdir+'master_flat'+suffix+'.fits')) == 1:
@@ -715,6 +715,7 @@ def brightest_star(file,min_distance=10,show=True,threshold_abs=None):
     from skimage import data, img_as_float
     
     image, header = fits.getdata(file, 0, header=True)
+    image = np.float32(image)
     if threshold_abs == None:
         threshold_abs = np.median(image) + 10.0*rb.std(image)
 
@@ -769,11 +770,11 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
 # Read image 
     image = fits.getdata(file, 0, header=False)
     ysz,xsz = image.shape
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if dark != None:
+    if length(flat) > 1:
         image /= flat
 
 # Read header
@@ -863,14 +864,18 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
     patch = image[y-sz/2:y+sz/2,x-sz/2:x+sz/2]
 
 # Fit 2D Guassian to target
-    params = fitgaussian(patch)
-    fit = gaussian(*params)
-    level = (np.max(patch) - np.median(patch))*np.array([0.95,0.5,0.1])
-    plt.contour(fit(*indices(patch.shape)),level,colors='blue')
-    aspect = min(params[3],params[4])/max(params[3],params[4])
-    fwhm = np.sqrt(params[3]*params[4])*2.0*np.sqrt(2*np.log(2))
-    norm = params[0] * 2.0 * np.pi * params[3] * params[4]
-    peak = params[0]
+    try:
+        params = fitgaussian(patch)
+        fit = gaussian(*params)
+        level = (np.max(patch) - np.median(patch))*np.array([0.95,0.5,0.1])
+        plt.contour(fit(*indices(patch.shape)),level,colors='blue')
+        aspect = min(params[3],params[4])/max(params[3],params[4])
+        fwhm = np.sqrt(params[3]*params[4])*2.0*np.sqrt(2*np.log(2))
+        norm = params[0] * 2.0 * np.pi * params[3] * params[4]
+        peak = params[0]
+    except:
+        aspect = np.nan ; fwhm = np.nan ; norm = np.nan ; peak = np.nan
+        fit = np.nan ; level = np.nan
 
 # Plot zoom in with fits overlaid
     sig = rb.std(patch)
@@ -896,9 +901,11 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
 
 # Chi Squared of Gaussian fit
     patchrms = np.sqrt(patch)
-    chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1)
-
-# Plot updated centroid location
+    try:
+        chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1)
+    except:
+        chisq =  np.nan
+    # Plot updated centroid location
     plt.scatter(sz/2+dx,sz/2+dy,marker='+',s=100,color='red',linewidth=1.5)
     plt.draw()
 
@@ -977,6 +984,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         sys.exit("Must supply source spectral type")
 
     image,header = fits.getdata(file, 0, header=True)
+    image = np.float32(image)
     exptime = header["exptime"]
     if ra == None:
         object = header["object"]
@@ -1008,11 +1016,11 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         ypeak = pix0[0,1]
 
 
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if flat != None:
+    if length(flat) > 1:
         image /= flat
 
     op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
@@ -1146,6 +1154,7 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
         sys.exit("Must supply source spectral type")
 
     image,header = fits.getdata(files[0], 0, header=True)
+    image = np.float32(image)
 
 
     if not object:
@@ -1207,13 +1216,14 @@ def do_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,
     
 # Get image and header
     image, header = fits.getdata(file, 0, header=True)
-
+    image = np.float32(image)
+    
 # Apply calibrations if provided
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if flat != None:
+    if length(flat) > 1:
         image /= flat
 
 # Get image info
@@ -1279,11 +1289,11 @@ def simple_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,b
     image, header = fits.getdata(file, 0, header=True)
 
 # Apply calibrations if provided
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if flat != None:
+    if length(flat) > 1:
         image /= flat
 
 # Get image info
@@ -1336,9 +1346,6 @@ def simple_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,b
 
 
 
-
-
-
 #----------------------------------------------------------------------#
 # batch_phot:
 #      calculate photometry on list of files with designated file 
@@ -1374,19 +1381,22 @@ def batch_phot(files,ras,decs,bias=None,dark=None,flat=None,outdir='./',
 #        if status == 0:
         jdval,xval,yval,fwhm,aspect,snr,exptime,fluxes,fluxerrors,skyvals,skyrmses = \
             do_phot(files[i],ras,decs,bias=bias,dark=dark,flat=flat,aperture=aperture,skyrad=skyrad)
-        print "Measured flux = %.4f" % fluxes[0]
-        info["jd"]      = np.append(info["jd"],[jdval],axis=0)
-        info["x"]       = np.append(info["x"],xval,axis=0)
-        info["y"]       = np.append(info["y"],yval,axis=0)
-        info["fwhm"]    = np.append(info["fwhm"],[fwhm],axis=0)
-        info["aspect"]  = np.append(info["aspect"],[aspect],axis=0)
-        info["snr"]    = np.append(info["snr"],[snr],axis=0)
-        info["exptime"] = np.append(info["exptime"],[exptime],axis=0)
-        info["flux"][i,:]   = fluxes
-        info["flerr"][i,:]  = fluxerrors
-        info["sky"][i,:]    = skyvals
-        info["skyrms"][i,:] = skyrmses
-
+        try:
+            print "Measured flux = %.4f" % fluxes[0]
+            info["jd"]      = np.append(info["jd"],[jdval],axis=0)
+            info["x"]       = np.append(info["x"],xval,axis=0)
+            info["y"]       = np.append(info["y"],yval,axis=0)
+            info["fwhm"]    = np.append(info["fwhm"],[fwhm],axis=0)
+            info["aspect"]  = np.append(info["aspect"],[aspect],axis=0)
+            info["snr"]    = np.append(info["snr"],[snr],axis=0)
+            info["exptime"] = np.append(info["exptime"],[exptime],axis=0)
+            info["flux"][i,:]   = fluxes
+            info["flerr"][i,:]  = fluxerrors
+            info["sky"][i,:]    = skyvals
+            info["skyrms"][i,:] = skyrmses
+        except:
+            print 'Photometry failure!!'
+            #        pdb.set_trace()
 # Write out photometry data
     file = open(outdir+datafile, "w")
     pickle.dump(info, file)

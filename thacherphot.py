@@ -862,7 +862,7 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
     plt.figure(2)
     plt.clf()
     patch = image[y-sz/2:y+sz/2,x-sz/2:x+sz/2]
-
+i
 # Fit 2D Guassian to target
     try:
         params = fitgaussian(patch)

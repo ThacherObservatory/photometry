@@ -862,7 +862,7 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
     plt.figure(2)
     plt.clf()
     patch = image[y-sz/2:y+sz/2,x-sz/2:x+sz/2]
-i
+
 # Fit 2D Guassian to target
     try:
         params = fitgaussian(patch)
@@ -874,6 +874,7 @@ i
         norm = params[0] * 2.0 * np.pi * params[3] * params[4]
         peak = params[0]
     except:
+        print('Fit Failed')
         aspect = np.nan ; fwhm = np.nan ; norm = np.nan ; peak = np.nan
         fit = np.nan ; level = np.nan
 

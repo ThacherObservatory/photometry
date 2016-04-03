@@ -8,26 +8,23 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.visualization import scale_image
 from photutils import CircularAperture, aperture_photometry, CircularAnnulus
-import quickimage as qi
+#import quickimage as qi
 
-#Yousef notes: for me at least there is a problem with import statements,
-#particularly with thacherphot not being able to import the module fitgaussian
+#to change the path, just change the assignment below to your name (but don't forget to 
+#actually type in your path in the if statements
+path = 'Yousef'
 
 #if path == 'Shin':
-    #Shin's path
+    #Shin, input your path here
 if path == 'Yousef':
-    path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/'
+    path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan12/'
+    #path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan13/'
+    import swiftimage as qi
 #if path == 'Alden':
-    #Alden's path
+    #Alden, input your path here
 
 
 files = glob.glob(path+"*fits")
-#test image in files
-qi.readimage(files[10],plot=True)
-
-image,header = qi.readimage(files[50],plot=True,siglo=2,sighi=2)
-w = wcs.WCS(header)
-
 
 #image calibration (bias, dark,flat)
 darks,dct = tp.get_files(tag='Dark')

@@ -11,7 +11,7 @@ from photutils import CircularAperture, aperture_photometry, CircularAnnulus
 #import quickimage as qi
 
 #to change the path, just change the assignment below to your name (but don't forget to 
-#actually type in your path in the if statements
+#actually type in your path in the if statements, as well as any potential import statements)
 path = 'Yousef'
 
 #if path == 'Shin':
@@ -50,11 +50,13 @@ rflat = tp.master_flat(rflats,bias=bias,dark=dark,outdir='./Photometry/')
 zflat = tp.master_flat(zflats,bias=bias,dark=dark,outdir='./Photometry/')
 
 #calibrated image equations for the 4 photometric bands
+#note: image will be defined later (when a specific image is chosen)
 gcal = (image - dark - bias)/gflat
 ical = (image - dark - bias)/iflat
 rcal = (image - dark - bias)/rflat
 zcal = (image - dark - bias)/zflat
 
+qi.readimage(image)
 
 
 

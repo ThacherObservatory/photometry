@@ -15,7 +15,8 @@ from photutils import CircularAperture, aperture_photometry, CircularAnnulus
 path = 'Yousef'
 
 #if path == 'Shin':
-    #Shin, input your path here
+    path= '/Users/shinnosuke/Documents/Astronomy/__MACOSX/2016Jan12/'
+    #path= 'Users/shinnosuke/Documents/Astronomy/__MACOSX/2016Jan13/'
 if path == 'Yousef':
     path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan12/'
     #path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan13/'

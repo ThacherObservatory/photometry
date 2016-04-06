@@ -26,7 +26,7 @@ if path == 'Yousef':
 #########################################################################
 
 #test invidiual image
-qi.readimage('n20160112.T4.NGC188.gp.0096.fits')
+image, header = fits.getdata(path + 'n20160112.T4.NGC188.gp.0096.fits', 0, header = True)
 
 files = glob.glob(path+"*fits")
 
@@ -39,15 +39,15 @@ iflats = tp.get_files(dir = path, tag = 'SkyFlat.ip')
 rflats = tp.get_files(dir = path, tag = 'SkyFlat.rp')
 zflats = tp.get_files(dir = path, tag = 'SkyFlat.zp')
 
-bias = tp.master_bias(biases,outdir='./Photometry/')
+bias = tp.master_bias(biases,outdir='./')
 
-dark = tp.master_dark(darks,bias=bias,outdir='./Photometry/')
+dark = tp.master_dark(darks,bias=bias,outdir='./')
 
 #master flats for the 4 photometric bands
-gflat = tp.master_flat(gflats,bias=bias,dark=dark,outdir='./Photometry/')
-iflat = tp.master_flat(iflats,bias=bias,dark=dark,outdir='./Photometry/')
-rflat = tp.master_flat(rflats,bias=bias,dark=dark,outdir='./Photometry/')
-zflat = tp.master_flat(zflats,bias=bias,dark=dark,outdir='./Photometry/')
+gflat = tp.master_flat(gflats[0],bias=bias,dark=dark,outdir='./')
+iflat = tp.master_flat(iflats[0],bias=bias,dark=dark,outdir='./')
+rflat = tp.master_flat(rflats[0],bias=bias,dark=dark,outdir='./')
+zflat = tp.master_flat(zflats[0],bias=bias,dark=dark,outdir='./')
 
 #calibrated image equations for the 4 photometric bands
 #note: image will be defined later (when a specific image is chosen)

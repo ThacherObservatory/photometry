@@ -70,7 +70,7 @@ def makeband(band='V'):
         
     
     
-def make_RGB():
+def make_RGB(sigmax=3,sigmin=1):
     
     Blue,header = fits.getdata('Blue.fit',0,header=True)
     Green,header = fits.getdata('Green.fit',0,header=True)    
@@ -86,12 +86,9 @@ def make_RGB():
         
     final = np.zeros((Blue.shape[0],Blue.shape[1],3),dtype=float)
     
-    sigmin = 0.25
-    sigmax = 5
-    
-    final[:,:,0] = img_scale.sqrt(Red,scale_min=rmed+sigmin*rsig,scale_max=rmed+0.6*sigmax*rsig)
-    final[:,:,1] = img_scale.sqrt(Green,scale_min=gmed+sigmin*gsig,scale_max=gmed+0.6*sigmax*gsig)
-    final[:,:,2] = img_scale.sqrt(Blue,scale_min=bmed+sigmin*bsig,scale_max=bmed+0.6*sigmax*bsig)
+    final[:,:,0] = img_scale.sqrt(Red,scale_min=rmed+sigmin*rsig,scale_max=rmed+sigmax*rsig)
+    final[:,:,1] = img_scale.sqrt(Green,scale_min=gmed+sigmin*gsig,scale_max=gmed+sigmax*gsig)
+    final[:,:,2] = img_scale.sqrt(Blue,scale_min=bmed+sigmin*bsig,scale_max=bmed+sigmax*bsig)
 
     plt.ion()
     plt.figure(99)

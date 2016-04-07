@@ -28,11 +28,11 @@ def readimage(imfile,plot=False,siglo=3,sighi=7):
 
     return image,header
 
-def display_image(image,siglo=3,sighi=7):
+def display_image(image,siglo=3,sighi=7,fignum=2):
     med = np.median(image)
     sig = rb.std(image)
     plt.ion()
-    plt.figure(2)
+    plt.figure(fignum)
     vmin = med - siglo*sig
     vmax = med + sighi*sig
     plt.imshow(image,vmin=vmin,vmax=vmax,cmap='gray')

@@ -70,7 +70,7 @@ def makeband(band='V'):
         
     
     
-def make_RGB(sigmax=3,sigmin=1):
+def make_RGB(sigmax=3,sigmin=1,write=False):
     
     Blue,header = fits.getdata('Blue.fit',0,header=True)
     Green,header = fits.getdata('Green.fit',0,header=True)    
@@ -93,27 +93,9 @@ def make_RGB(sigmax=3,sigmin=1):
     plt.ion()
     plt.figure(99)
     plt.imshow(final,aspect='equal')
+
+    if write:
+        plt.savefig('RGB.png',dpi=300)
     
-    
-def junk():
-
-    for i in range(zsz):
-        print 'Reading image '+files[i]
-        image,header = fits.getdata(files[i],0,header=True)
-        stack[:,:,i] = image
-   
-
-    medstack = np.median(stack,axis=2)
-
-#calimage = image - medstack
-
-#med = np.median(calimage)
-#sig = rb.std(calimage)
-#vmin = med - 2*sig
-#vmax = med + 5*sig
-
-#plt.figure(2)
-#plt.imshow(calimage,vmin=vmin,vmax=vmax,cmap='gray')
-
     return
 

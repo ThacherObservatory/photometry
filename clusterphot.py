@@ -18,15 +18,13 @@ path = 'Yousef'
 if path == 'Shin':
     path= '/Users/shinnosuke/Documents/Astronomy/__MACOSX/2016Jan12/'
     #path= 'Users/shinnosuke/Documents/Astronomy/__MACOSX/2016Jan13/'
-    #import swiftimage as qi
 if path == 'Yousef':
     path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan12/'
     #path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan13/'
-    
 #if path == 'Alden':
     #Alden, input your path here
 
-#########################################################################
+#-------------------------------------------------------------------------#
 
 #get raw image
 gimage, gheader = fits.getdata(path + 'n20160112.T4.NGC188.gp.0096.fits', 0, header = True)

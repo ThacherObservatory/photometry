@@ -72,8 +72,19 @@ qi.display_image(zcal,siglo = 2, sighi = 2,fignum = 2)
 #potential candidate: x ~= 1830, y = 75
 #potential eclipsing binary: x = 66, y = 1350
 
-#plt.plot(image, coordinates)
+#display image and plot an x over the star at x = 1830, y = 75
+qi.display_image(gcal,siglo = 2, sighi = 2,fignum = 1)
+plt.plot(1830,75,'x')
 
+#aperture photometry; will get exact Sky coordinates later; remaining code is yet to be custom tailored
+w = wcs.WCS(gheader)
+target = SkyCoord('19 51 39.82 +48 19 55.4', unit=(u.hourangle, u.deg))
+world0 = np.array([[target.ra.degree, target.dec.degree]])
+pix0 = w.wcs_world2pix(world0,1) 
+x0 = pix0[0,0]
+y0 = pix0[0,1]
+radius,ynew,xnew,fwhm,aspect,snrmax,totflux,totap,chisq = \
+    tp.optimal_aperture(x0,y0,gcal,skyrad=[15,20])
 
 #Combining all images in a photometric band -----------------------------#
 

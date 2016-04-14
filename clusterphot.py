@@ -17,6 +17,7 @@ import hcongrid
 #actually type in your path in the if statements, as well as any potential import statements)
 path = 'Yousef'
 
+#def get_path
 if path == 'Staniya':
     path= '/Users/staniya/Astronomy/MINERVA/2016Jan12/'
     #path= '/Users/staniya/Astronomy/MINERVA/2016Jan13'

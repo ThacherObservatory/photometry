@@ -10,6 +10,7 @@ from astropy.visualization import scale_image
 from photutils import CircularAperture, aperture_photometry, CircularAnnulus
 import quick_image as qi
 import sys
+import hcongrid
 
 
 #to change the path, just change the assignment below to your name (but don't forget to 
@@ -76,17 +77,25 @@ qi.display_image(zcal,siglo = 2, sighi = 2,fignum = 2)
 qi.display_image(gcal,siglo = 2, sighi = 2,fignum = 1)
 plt.plot(1830,75,'x')
 
-#aperture photometry; will get exact Sky coordinates later; remaining code is yet to be custom tailored
-w = wcs.WCS(gheader)
-target = SkyCoord('19 51 39.82 +48 19 55.4', unit=(u.hourangle, u.deg))
-world0 = np.array([[target.ra.degree, target.dec.degree]])
-pix0 = w.wcs_world2pix(world0,1) 
-x0 = pix0[0,0]
-y0 = pix0[0,1]
+#aperture photometry
+x0 = 1830.0
+y0 = 75.0
 radius,ynew,xnew,fwhm,aspect,snrmax,totflux,totap,chisq = \
     tp.optimal_aperture(x0,y0,gcal,skyrad=[15,20])
 
 #Combining all images in a photometric band -----------------------------#
+
+#get all images for each photometric band
+gimages = tp.get_files(dir = path, tag = 'NGC188.gp')
+rimages = tp.get_files(dir = path, tag = 'NGC188.rp')
+iimages = tp.get_files(dir = path, tag = 'NGC188.ip')
+zimages = tp.get_files(dir = path, tag = 'NGC188.zp')
+
+#Note: not necessary; combine all images into one master image for each photometric band
+#mastergcal = hcongrid.hcongrid(gimages, )
+#masterical = hcongrid.hcongrid(gimages, )
+#masterrcal = hcongrid.hcongrid(gimages, )
+#masterzcal = hcongrid.hcongrid(gimages, )
 
 
 

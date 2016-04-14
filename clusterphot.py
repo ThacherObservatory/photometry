@@ -98,6 +98,28 @@ zimages = tp.get_files(dir = path, tag = 'NGC188.zp')
 #masterrcal = hcongrid.hcongrid(gimages, )
 #masterzcal = hcongrid.hcongrid(gimages, )
 
+"""
+This was copied from the imaging script of Fall 2015 (A. Wood, K. O'Neill, M. Wilcox)
+
+files = glob.glob('Mantis*[0-9]'+band+'_cal.fit*')
+zsz = len(files)
+reffile = files[zsz/2]
+image0,header0 = readimage(reffile)
+ysz,xsz = np.shape(image0)
+
+refim = h.pyfits.open(reffile)
+refh = h.pyfits.getheader(reffile)
+
+stack = np.zeros((xsz,ysz,zsz))
+for i in range(zsz):
+    im = h.pyfits.open(files[i])
+    newim = h.hcongrid(im[0].data,im[0].header,refh)
+    stack[:,:,i] = newim
+    
+final = np.median(stack,axis=2)
+""" 
+
+
 #framework; this was just copied from ipython notebook; later to be custom tailored
 from photutils.datasets import load_star_image
 hdu = load_star_image()    

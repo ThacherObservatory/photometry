@@ -16,9 +16,9 @@ import sys
 #actually type in your path in the if statements, as well as any potential import statements)
 path = 'Yousef'
 
-if path == 'Shin':
-    path= '/Users/shinnosuke/Documents/Astronomy/__MACOSX/2016Jan12/'
-    #path= 'Users/shinnosuke/Documents/Astronomy/__MACOSX/2016Jan13/'
+if path == 'Staniya':
+    path= '/Users/staniya/Astronomy/MINERVA/2016Jan12/'
+    #path= '/Users/staniya/Astronomy/MINERVA/2016Jan13'
 if path == 'Yousef':
     path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan12/'
     #path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan13/'

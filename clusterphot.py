@@ -98,7 +98,13 @@ zimages = tp.get_files(dir = path, tag = 'NGC188.zp')
 #masterrcal = hcongrid.hcongrid(gimages, )
 #masterzcal = hcongrid.hcongrid(gimages, )
 
+#framework; this was just copied from ipython notebook; later to be custom tailored
+from photutils.datasets import load_star_image
+hdu = load_star_image()    
+star_data = hdu.data[0:400, 0:400]
 
+from photutils import daofind
+sources = daofind(star_data - median, fwhm=3.0, threshold=5.*std) 
 
 
 

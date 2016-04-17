@@ -64,11 +64,13 @@ rcal = (rimage - dark - bias)/rflat
 ical = (iimage - dark - bias)/iflat
 zcal = (zimage - dark - bias)/zflat
 
+"""
 #display images
 qi.display_image(gcal,siglo = 2, sighi = 2,fignum = 2)
 qi.display_image(rcal,siglo = 2, sighi = 2,fignum = 2)
 qi.display_image(ical,siglo = 2, sighi = 2,fignum = 2)
 qi.display_image(zcal,siglo = 2, sighi = 2,fignum = 2)
+"""
 
 #Photometry on a Single Star --------------------------------------------#
 #potential candidate: x ~= 1830, y = 75
@@ -87,10 +89,10 @@ radius,ynew,xnew,fwhm,aspect,snrmax,totflux,totap,chisq = \
 #Combining all images in a photometric band -----------------------------#
 
 #get all images for each photometric band
-gimages = tp.get_files(dir = path, tag = 'NGC188.gp')
-rimages = tp.get_files(dir = path, tag = 'NGC188.rp')
-iimages = tp.get_files(dir = path, tag = 'NGC188.ip')
-zimages = tp.get_files(dir = path, tag = 'NGC188.zp')
+gfiles = tp.get_files(dir = path, tag = 'NGC188.gp')
+rfiles = tp.get_files(dir = path, tag = 'NGC188.rp')
+ifiles = tp.get_files(dir = path, tag = 'NGC188.ip')
+zfiles = tp.get_files(dir = path, tag = 'NGC188.zp')
 
 #Note: not necessary; combine all images into one master image for each photometric band
 #mastergcal = hcongrid.hcongrid(gimages, )
@@ -100,16 +102,13 @@ zimages = tp.get_files(dir = path, tag = 'NGC188.zp')
 
 """
 This was copied from the imaging script of Fall 2015 (A. Wood, K. O'Neill, M. Wilcox)
-
 files = glob.glob('Mantis*[0-9]'+band+'_cal.fit*')
 zsz = len(files)
 reffile = files[zsz/2]
 image0,header0 = readimage(reffile)
 ysz,xsz = np.shape(image0)
-
 refim = h.pyfits.open(reffile)
 refh = h.pyfits.getheader(reffile)
-
 stack = np.zeros((xsz,ysz,zsz))
 for i in range(zsz):
     im = h.pyfits.open(files[i])
@@ -119,7 +118,22 @@ for i in range(zsz):
 final = np.median(stack,axis=2)
 """ 
 
+gzsz = len(gfiles)
+greffile = gfiles[gzsz/2]
+image0, header0 = qi.readimage(greffile)
+gysz, gxsz = np.shape(image0)
+grefim = hcongrid.pyfits.open(greffile)
+grefh = hcongrid.pyfits.getheader(greffile)
+gstack = np.zeros((gxsz,gysz,gzsz))
+for i in range(gzsz):
+    gim = hcongrid.pyfits.open(gfiles[i])
+    gnewim = hcongrid.hcongrid(gim[0].date, gim[0].header,grefh)
+    gstack[:,:,i] = gnewim
+    
+gfinal = np.median(gstack, axis = 2)
 
+
+"""
 #framework; this was just copied from ipython notebook; later to be custom tailored
 from photutils.datasets import load_star_image
 hdu = load_star_image()    
@@ -127,9 +141,4 @@ star_data = hdu.data[0:400, 0:400]
 
 from photutils import daofind
 sources = daofind(star_data - median, fwhm=3.0, threshold=5.*std) 
-
-
-
-
-
-
+"""

@@ -10,7 +10,7 @@ from astropy.visualization import scale_image
 from photutils import CircularAperture, aperture_photometry, CircularAnnulus
 import quick_image as qi
 import sys
-import hcongrid
+import hcongrid as h
 
 
 #to change the path, just change the assignment below to your name (but don't forget to 
@@ -89,10 +89,10 @@ radius,ynew,xnew,fwhm,aspect,snrmax,totflux,totap,chisq = \
 #Combining all images in a photometric band -----------------------------#
 
 #get all images for each photometric band
-gfiles = tp.get_files(dir = path, tag = 'NGC188.gp')
-rfiles = tp.get_files(dir = path, tag = 'NGC188.rp')
-ifiles = tp.get_files(dir = path, tag = 'NGC188.ip')
-zfiles = tp.get_files(dir = path, tag = 'NGC188.zp')
+gfiles,gct = tp.get_files(dir = path, tag = 'NGC188.gp')
+rfiles,rct = tp.get_files(dir = path, tag = 'NGC188.rp')
+ifiles,ict = tp.get_files(dir = path, tag = 'NGC188.ip')
+zfiles,zct = tp.get_files(dir = path, tag = 'NGC188.zp')
 
 #Note: not necessary; combine all images into one master image for each photometric band
 #mastergcal = hcongrid.hcongrid(gimages, )
@@ -122,12 +122,12 @@ gzsz = len(gfiles)
 greffile = gfiles[gzsz/2]
 image0, header0 = qi.readimage(greffile)
 gysz, gxsz = np.shape(image0)
-grefim = hcongrid.pyfits.open(greffile)
-grefh = hcongrid.pyfits.getheader(greffile)
+grefim = h.pyfits.open(greffile)
+grefh = h.pyfits.getheader(greffile)
 gstack = np.zeros((gxsz,gysz,gzsz))
 for i in range(gzsz):
-    gim = hcongrid.pyfits.open(gfiles[i])
-    gnewim = hcongrid.hcongrid(gim[0].date, gim[0].header,grefh)
+    gim = h.pyfits.open(gfiles[i])
+    gnewim = h.hcongrid((gim[0].data-dark-bias)/gflat, gim[0].header,grefh)
     gstack[:,:,i] = gnewim
     
 gfinal = np.median(gstack, axis = 2)

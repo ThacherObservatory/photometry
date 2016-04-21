@@ -96,7 +96,7 @@ def make_flat(path=None,band='gp',bias=None,dark=None):
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
 
-def stack_ims(band='gp',source='NGC188',dark=None, bias=None, flat=None):
+def stack_ims(band='gp',source='NGC188',dark=None, bias=None, flat=None, path=None):
 
     
     if not path:

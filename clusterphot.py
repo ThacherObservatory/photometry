@@ -33,6 +33,9 @@ def set_path(user='Yousef',date='2016Jan12'):
 
     elif path == 'Alden':
         path = '/Users/Alden/python/'+date+'/'
+
+    elif path == 'Swift':
+        path = '/Users/jonswift/Dropbox (Thacher)/Observatory/Data/MINERVA/'+date+'/'
         
     return path
 

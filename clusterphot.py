@@ -13,12 +13,13 @@ import sys
 import hcongrid as h
 
 #this function needs work; path is not being set properly
-def set_path(user):
+def set_path(user == 'Yousef'):
     if user == 'Staniya':
         path = '/Users/staniya/Astronomy/MINERVA/2016Jan12/'
         #path= '/Users/staniya/Astronomy/MINERVA/2016Jan13'
     elif user == 'Yousef':
         path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan12/'
+        return path
         #path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan13/'
     #elif path == 'Alden':
     #Alden, input your path here

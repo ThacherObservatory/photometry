@@ -12,21 +12,19 @@ import quick_image as qi
 import sys
 import hcongrid as h
 
-
-#to change the path, just change the assignment below to your name (but don't forget to 
-#actually type in your path in the if statements, as well as any potential import statements)
-path = 'Yousef'
-
-#def get_path
-if path == 'Staniya':
-    path= '/Users/staniya/Astronomy/MINERVA/2016Jan12/'
-    #path= '/Users/staniya/Astronomy/MINERVA/2016Jan13'
-if path == 'Yousef':
-    path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan12/'
-    #path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan13/'
-#if path == 'Alden':
+#this function needs work; path is not being set properly
+def set_path(user):
+    if user == 'Staniya':
+        path = '/Users/staniya/Astronomy/MINERVA/2016Jan12/'
+        #path= '/Users/staniya/Astronomy/MINERVA/2016Jan13'
+    elif user == 'Yousef':
+        path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan12/'
+        #path = '/Users/Yousef/Desktop/Astronomy/MINERVA Star Clusters/2016Jan13/'
+    #elif path == 'Alden':
     #Alden, input your path here
+    return
 
+set_path('Yousef')
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
 
@@ -94,12 +92,6 @@ rfiles,rct = tp.get_files(dir = path, tag = 'NGC188.rp')
 ifiles,ict = tp.get_files(dir = path, tag = 'NGC188.ip')
 zfiles,zct = tp.get_files(dir = path, tag = 'NGC188.zp')
 
-#Note: not necessary; combine all images into one master image for each photometric band
-#mastergcal = hcongrid.hcongrid(gimages, )
-#masterical = hcongrid.hcongrid(gimages, )
-#masterrcal = hcongrid.hcongrid(gimages, )
-#masterzcal = hcongrid.hcongrid(gimages, )
-
 """
 This was copied from the imaging script of Fall 2015 (A. Wood, K. O'Neill, M. Wilcox)
 files = glob.glob('Mantis*[0-9]'+band+'_cal.fit*')
@@ -117,7 +109,7 @@ for i in range(zsz):
     
 final = np.median(stack,axis=2)
 """ 
-
+#stack all images and produce final calibrated image for each photometric band
 gzsz = len(gfiles)
 greffile = gfiles[gzsz/2]
 image0, header0 = qi.readimage(greffile)
@@ -132,13 +124,60 @@ for i in range(gzsz):
     
 gfinal = np.median(gstack, axis = 2)
 
+rzsz = len(rfiles)
+rreffile = rfiles[rzsz/2]
+image0, header0 = qi.readimage(rreffile)
+rysz, rxsz = np.shape(image0)
+rrefim = h.pyfits.open(rreffile)
+rrefh = h.pyfits.getheader(rreffile)
+rstack = np.zeros((rxsz,rysz,rzsz))
+for i in range(rzsz):
+    rim = h.pyfits.open(rfiles[i])
+    rnewim = h.hcongrid((rim[0].data-dark-bias)/rflat, rim[0].header,rrefh)
+    rstack[:,:,i] = rnewim
+    
+rfinal = np.median(rstack, axis = 2)
 
-"""
+izsz = len(ifiles)
+ireffile = ifiles[izsz/2]
+image0, header0 = qi.readimage(ireffile)
+iysz, ixsz = np.shape(image0)
+irefim = h.pyfits.open(ireffile)
+irefh = h.pyfits.getheader(ireffile)
+istack = np.zeros((ixsz,iysz,izsz))
+for i in range(izsz):
+    iim = h.pyfits.open(ifiles[i])
+    inewim = h.hcongrid((iim[0].data-dark-bias)/iflat, iim[0].header,irefh)
+    istack[:,:,i] = inewim
+    
+ifinal = np.median(istack, axis = 2)
+
+zzsz = len(zfiles)
+zreffile = zfiles[zzsz/2]
+image0, header0 = qi.readimage(zreffile)
+zysz, zxsz = np.shape(image0)
+zrefim = h.pyfits.open(zreffile)
+zrefh = h.pyfits.getheader(zreffile)
+zstack = np.zeros((zxsz,zysz,zzsz))
+for i in range(zzsz):
+    zim = h.pyfits.open(zfiles[i])
+    znewim = h.hcongrid((zim[0].data-dark-bias)/zflat, zim[0].header,zrefh)
+    zstack[:,:,i] = znewim
+    
+zfinal = np.median(zstack, axis = 2)
+
 #framework; this was just copied from ipython notebook; later to be custom tailored
 from photutils.datasets import load_star_image
 hdu = load_star_image()    
 star_data = hdu.data[0:400, 0:400]
 
+from astropy.stats import sigma_clipped_stats
+mean, median, std = sigma_clipped_stats(star_data, sigma=3.0)
+
 from photutils import daofind
 sources = daofind(star_data - median, fwhm=3.0, threshold=5.*std) 
-"""
+
+
+
+
+

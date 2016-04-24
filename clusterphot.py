@@ -57,13 +57,16 @@ def make_bias(path=None):
 
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
-def make_dark(path=None):
+def make_dark(path=None, bias=None):
 
     """
     Make master dark from raw data files
     """
     if not path:
         path = set_path()
+        
+    if not bias:
+        bias = make_bias(path)
 
     darks,dct = tp.get_files(dir = path,tag='Dark')
     masterdark = tp.master_dark(darks,bias=bias,outdir='./')
@@ -85,7 +88,7 @@ def make_flat(path=None,band='gp',bias=None,dark=None):
         bias = make_bias(path=path)
 
     if not dark:
-        dark = make_dark(path=path)
+        dark = make_dark(path=path, bias=bias)
         
     flats,ct   = tp.get_files(dir=path, tag='SkyFlat.'+band)
     masterflat = tp.master_flat(flats, bias=bias, dark=dark, outdir='./', suffix=band)

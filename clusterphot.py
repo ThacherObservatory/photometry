@@ -66,7 +66,7 @@ def make_dark(path=None, bias=None):
         path = set_path()
         
     if not bias:
-        bias = make_bias(path)
+        bias = make_bias(path=path)
 
     darks,dct = tp.get_files(dir = path,tag='Dark')
     masterdark = tp.master_dark(darks,bias=bias,outdir='./')

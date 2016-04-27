@@ -11,6 +11,7 @@ from photutils import CircularAperture, aperture_photometry, CircularAnnulus
 import quick_image as qi
 import sys
 import hcongrid as h
+from length import length
 
 
 #-------------------------------------------------------------------------#
@@ -84,7 +85,7 @@ def make_flat(path=None,band='gp',bias=None,dark=None):
     if not path:
         path = set_path()
 
-    if not bias:
+    if length(bias) == 1:
         bias = make_bias(path=path)
 
     if not dark:

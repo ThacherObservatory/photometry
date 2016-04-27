@@ -135,19 +135,33 @@ def stack_ims(band='gp',source='NGC188',dark=None, bias=None, flat=None, path=No
 
     return final
 
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#
+
+def find_stars(image):
+
+    star_data = image.data[0:400, 0:400]
+    from astropy.stats import sigma_clipped_stats
+    mean, median, std = sigma_clipped_stats(star_data, sigma=3.0)
+    from photutils import daofind
+    sources = daofind(star_data - median, fwhm=3.0, threshold=5.*std)
+    
+    return sources
+
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#
+'''
+def plot_stars()
 
 
 
-"""
-#framework; this was just copied from ipython notebook; later to be custom tailored
-from photutils.datasets import load_star_image
-hdu = load_star_image()    
-star_data = hdu.data[0:400, 0:400]
+'''
 
-from astropy.stats import sigma_clipped_stats
-mean, median, std = sigma_clipped_stats(star_data, sigma=3.0)
-
-from photutils import daofind
-sources = daofind(star_data - median, fwhm=3.0, threshold=5.*std) 
-"""
-
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#
+'''
+def phot_all():
+    
+    
+    
+'''

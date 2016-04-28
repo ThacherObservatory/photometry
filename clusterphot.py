@@ -134,26 +134,26 @@ def stack_ims(path=None,band='gp',source='NGC188',bias=None,dark=None,flat=None)
     final = np.median(stack, axis=2)
 
 
-    return final
+    return final,refh
 
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
 
-def find_stars(image, plot = False):
+def find_stars(image, plot = False, fwhm = 20.0, threshold=3.):
 
-    star_data = image.data[0:400, 0:400]
     from astropy.stats import sigma_clipped_stats
-    mean, median, std = sigma_clipped_stats(star_data, sigma=3.0)
+    mean, median, std = sigma_clipped_stats(image, sigma=3.0)
     from photutils import daofind
-    sources = daofind(star_data - median, fwhm=3.0, threshold=5.*std)
+    sources = daofind(image - median, fwhm=fwhm, threshold=threshold*std)
     
     if plot == True:
         from astropy.visualization import SqrtStretch
         from astropy.visualization.mpl_normalize import ImageNormalize
         positions = (sources['xcentroid'], sources['ycentroid'])
         apertures = CircularAperture(positions, r=4.)
-        norm = ImageNormalize(stretch=SqrtStretch())
-        plt.imshow(star_data, cmap='Greys', origin='lower', norm=norm)
+        #norm = ImageNormalize(stretch=SqrtStretch())
+        #plt.imshow(image, cmap='Greys', origin='lower', norm=norm)
+        qi.display_image(image)
         apertures.plot(color='blue', lw=1.5, alpha=0.5)
         
     return sources

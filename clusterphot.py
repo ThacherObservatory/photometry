@@ -146,6 +146,8 @@ def find_stars(image, plot = False, fwhm = 20.0, threshold=3.):
     from photutils import daofind
     sources = daofind(image - median, fwhm=fwhm, threshold=threshold*std)
     
+    #for loop for vetting identified stars here; use numpy.delete for deleting elements from corresponding miniarrays
+    
     if plot == True:
         from astropy.visualization import SqrtStretch
         from astropy.visualization.mpl_normalize import ImageNormalize

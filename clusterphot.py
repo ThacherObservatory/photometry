@@ -113,7 +113,7 @@ def stack_ims(path=None,band='gp',source='NGC188',bias=None,dark=None,flat=None)
         dark = make_dark(path=path)
 
     if length(flat) == 1:
-        dark = make_flat(path=path,band=band,bias=bias,dark=dark)
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
 
         
     files,sz = tp.get_files(dir=path, tag=source+'.'+band)

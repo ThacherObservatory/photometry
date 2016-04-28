@@ -66,7 +66,7 @@ def make_dark(path=None, bias=None):
     if not path:
         path = set_path()
         
-    if not bias:
+    if length(bias) == 1:
         bias = make_bias(path=path)
 
     darks,dct = tp.get_files(dir = path,tag='Dark')
@@ -88,7 +88,7 @@ def make_flat(path=None,band='gp',bias=None,dark=None):
     if length(bias) == 1:
         bias = make_bias(path=path)
 
-    if not dark:
+    if length(dark) == 1:
         dark = make_dark(path=path, bias=bias)
         
     flats,ct   = tp.get_files(dir=path, tag='SkyFlat.'+band)
@@ -100,20 +100,20 @@ def make_flat(path=None,band='gp',bias=None,dark=None):
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
 
-def stack_ims(band='gp',source='NGC188',dark=None, bias=None, flat=None, path=None):
+def stack_ims(path=None,band='gp',source='NGC188',bias=None,dark=None,flat=None):
 
     
     if not path:
         path = set_path()
 
-    if not bias:
+    if length(bias) == 1:
         bias = make_bias(path=path)
 
-    if not dark:
+    if length(dark) == 1:
         dark = make_dark(path=path)
 
-    if not flat:
-        dark = make_flat(path=path,bias=bias,dark=dark,band=band)
+    if length(flat) == 1:
+        dark = make_flat(path=path,band=band,bias=bias,dark=dark)
 
         
     files,sz = tp.get_files(dir=path, tag=source+'.'+band)
@@ -139,7 +139,7 @@ def stack_ims(band='gp',source='NGC188',dark=None, bias=None, flat=None, path=No
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
 
-def find_stars(image):
+def find_stars(image, plot = False):
 
     star_data = image.data[0:400, 0:400]
     from astropy.stats import sigma_clipped_stats
@@ -147,19 +147,20 @@ def find_stars(image):
     from photutils import daofind
     sources = daofind(star_data - median, fwhm=3.0, threshold=5.*std)
     
+    if plot == True:
+        from astropy.visualization import SqrtStretch
+        from astropy.visualization.mpl_normalize import ImageNormalize
+        positions = (sources['xcentroid'], sources['ycentroid'])
+        apertures = CircularAperture(positions, r=4.)
+        norm = ImageNormalize(stretch=SqrtStretch())
+        plt.imshow(star_data, cmap='Greys', origin='lower', norm=norm)
+        apertures.plot(color='blue', lw=1.5, alpha=0.5)
+        
     return sources
 
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
-'''
-def plot_stars()
 
-
-
-'''
-
-#-------------------------------------------------------------------------#
-#-------------------------------------------------------------------------#
 '''
 def phot_all():
     

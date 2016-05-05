@@ -189,3 +189,35 @@ def do_phot(image,position,radius = 5, r_in=15., r_out=20.):
     
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
+def vet_sources(xcen,ycen,fwhm=20.0):
+    '''
+    Input the xcentroid and ycentriod values of sources in an image and the
+    distance less than which sources will be rejected (in pixels)
+
+    Returns vetted list of x and y centroid values.
+
+    '''
+    if len(xcen) != len(ycen):
+        print 'X centroid and Y centroid values not equal in length!'
+        return None,None
+
+    s = np.argsort(xcen)
+    xsort = xcen[s]
+    ysort = ycen[s]
+    n = len(xsort)
+    i = 0
+    while i < len(xsort)-1:
+        x = xsort[i]
+        y = ysort[i]
+        xinds, = np.where(np.abs(xsort-x) < fwhm)
+        distvec = np.sqrt( (xsort[xinds]-x)**2 + (ysort[xinds]-y)**2)
+        dinds, = np.where(distvec < fwhm)
+        if len(dinds) > 1:
+            xsort = np.delete(xsort,xinds[dinds[1:]])
+            ysort = np.delete(ysort,xinds[dinds[1:]])
+        i += 1
+
+    xvet = np.copy(xsort)
+    yvet = np.copy(ysort)
+
+    return xvet,yvet

@@ -146,13 +146,14 @@ def find_stars(image, plot = False, fwhm = 20.0, threshold=3.):
     from photutils import daofind
     sources = daofind(image - median, fwhm=fwhm, threshold=threshold*std)
     
-    #for loop for vetting identified stars here; use numpy.delete for deleting elements from corresponding miniarrays
+   
+   #for loop for vetting identified stars here; use numpy.delete for deleting elements from corresponding miniarrays
    # for i in len(sources):
         
     
     if plot == True:
-        from astropy.visualization import SqrtStretch
-        from astropy.visualization.mpl_normalize import ImageNormalize
+       # from astropy.visualization import SqrtStretch
+       # from astropy.visualization.mpl_normalize import ImageNormalize
         positions = (sources['xcentroid'], sources['ycentroid'])
         apertures = CircularAperture(positions, r=4.)
         #norm = ImageNormalize(stretch=SqrtStretch())
@@ -165,9 +166,26 @@ def find_stars(image, plot = False, fwhm = 20.0, threshold=3.):
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
 
-'''
-def phot_all():
+
+def do_phot(image,position,radius = 5, r_in=15., r_out=20.):
     
+    aperture = CircularAperture(position,r=radius)
+
+    bkg_aperture = CircularAnnulus(position,r_in=r_in,r_out=r_out)
+
+    # perform the photometry; the default method is 'exact'
+    phot = aperture_photometry(image, aperture)
+    bkg = aperture_photometry(image, bkg_aperture)
+
+    # calculate the mean background level (per pixel) in the annuli
+    bkg_mean = bkg['aperture_sum'] / bkg_aperture.area()
+    bkg_sum = bkg_mean * aperture.area()
+   
+    #this may need editing; 'phot' in second line below may need brackets with 'flux_sum' inside
+    phot['bkg_sum'] = bkg_sum
+    phot['flux_sum'] = phot - bkg_sum
     
+    return phot
     
-'''
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#

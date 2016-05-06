@@ -181,9 +181,9 @@ def do_phot(image,position,radius = 5, r_in=15., r_out=20.):
     bkg_mean = bkg['aperture_sum'] / bkg_aperture.area()
     bkg_sum = bkg_mean * aperture.area()
    
-    #this may need editing; 'phot' in second line below may need brackets with 'flux_sum' inside
+    #look at ipython notebook; his may need editing; 'phot' in second line below may need brackets with 'flux_sum' inside
     phot['bkg_sum'] = bkg_sum
-    phot['flux_sum'] = phot - bkg_sum
+    phot['flux_sum'] = phot['flux'] - bkg_sum
     
     return phot
     

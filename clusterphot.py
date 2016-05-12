@@ -146,11 +146,8 @@ def find_stars(image, plot = False, fwhm = 20.0, threshold=3.):
     from photutils import daofind
     sources = daofind(image - median, fwhm=fwhm, threshold=threshold*std)
     
-   
-   #for loop for vetting identified stars here; use numpy.delete for deleting elements from corresponding miniarrays
-   # for i in len(sources):
+   # vet_sources(10.0,10.0)
         
-    
     if plot == True:
        # from astropy.visualization import SqrtStretch
        # from astropy.visualization.mpl_normalize import ImageNormalize
@@ -182,8 +179,12 @@ def do_phot(image,position,radius = 5, r_in=15., r_out=20.):
     bkg_sum = bkg_mean * aperture.area()
    
     #look at ipython notebook; his may need editing; 'phot' in second line below may need brackets with 'flux_sum' inside
-    phot['bkg_sum'] = bkg_sum
-    phot['flux_sum'] = phot['flux'] - bkg_sum
+   # phot['bkg_sum'] = bkg_sum
+   # phot['flux_sum'] = phot['flux'] - bkg_sum
+    
+    #these two lines from ipython notebook
+    flux_bkgsub = phot['aperture_sum'] - bkg_sum
+    phot['aperture_sum_bkgsub'] = flux_bkgsub
     
     return phot
     

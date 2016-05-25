@@ -223,3 +223,15 @@ def vet_sources(xcen,ycen,fwhm=20.0):
     yvet = np.copy(ysort)
 
     return xvet,yvet
+    
+    
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#
+def phot_all(image, xcen, ycen):
+    
+    flux = []
+    for i in range(len(xcen)):
+        phot = do_phot(image, [(xcen[i],ycen[i])])
+        flux = np.append(flux,phot['aperture_sum_bkgsub'])
+        
+    return flux

@@ -855,7 +855,7 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
 #            coords in "image" using defined skyradii = [in,out]       #
 #----------------------------------------------------------------------#
 
-def optimal_aperture(x,y,image,skyrad,aperture=None):
+def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
 
 # Create zoom in of target
     sz = 100
@@ -924,7 +924,8 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
     plt.figure(3)
     plt.clf()
     plt.subplot(2,1,1)
-    plt.plot(ap,flux/totflux)
+    cog = flux/totflux
+    plt.plot(ap,cog)
     plt.xlabel("aperture radius (pixels)")
     plt.ylabel("normalized flux")
     plt.annotate('Total Counts = %.f' % np.max(flux), [0.86,0.57],horizontalalignment='right',
@@ -949,8 +950,15 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
 
     plt.draw()
 
-    return op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq
+    dict = {'optimal_aperture':op_ap, 'xcen':xval, 'ycen':yval, 'fwhm':fwhm,
+            'aspect':aspect,'snrmax':snrmax,'totflux':totflux, 'totflux_aperture':totap,
+            'chisq':chisq,'curve_of_growth':[ap,cog]}
 
+    if use_old:
+        return op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq
+    else:
+        return dict
+            
 
 
 

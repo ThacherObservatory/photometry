@@ -62,7 +62,9 @@ import time
 #            batch_phot.
 #          - New annotation for bias, readnoise and dark images.
 #          - Fixed subplot bug in "lightcurve" to allow for large 
-#            number of reference stars. 
+#            number of reference stars.
+# 6/13/16  - Updated output of optimal_aperture
+# (jswift)
 #----------------------------------------------------------------------
 
 # For interactive plotting
@@ -703,7 +705,7 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
 # brightest_star                                                       #
 #----------------------------------------------------------------------#
 
-def brightest_star(file,min_distance=10,show=True,threshold_abs=None):
+def brightest_star(image,header,min_distance=10,show=True,threshold_abs=None):
 
     """
     Under development
@@ -714,7 +716,7 @@ def brightest_star(file,min_distance=10,show=True,threshold_abs=None):
     from skimage.feature import peak_local_max
     from skimage import data, img_as_float
     
-    image, header = fits.getdata(file, 0, header=True)
+#    image, header = fits.getdata(file, 0, header=True)
     image = np.float32(image)
     if threshold_abs == None:
         threshold_abs = np.median(image) + 10.0*rb.std(image)
@@ -913,7 +915,8 @@ def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
 # Optimize based on signal to noise from counts and background RMS
     flux = phot["flux"][:,0]
     skyrms = phot["skyrms"][0]    
-    sbg = skyrms*ap*np.sqrt(np.pi)
+    fluxerr = phot['fluxerr'][:,0]
+    sbg = skyrms*ap*np.sqrt(np.pi) # rms * sqrt(# of pixels in phot aperture)
     snr = flux/sqrt(sbg**2 + flux) 
     snrmax = np.max(snr)
     maxi = np.argmax(flux)

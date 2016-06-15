@@ -52,15 +52,17 @@ def find_flux(image):
     Ysig = params[4]
     #Check if sigmas x and y = xcen and ycen
 
-    flux = A * 2 * pi * Xsig * Ysig
+    flux = (A * 2 * pi * Xsig * Ysig)/10.
     
-    num = np.sum(image)
+    num = (np.sum(image))/10.
     
     return num, flux
 
 fluxes = []
+totals = []
 
 for file in files:
     image,header = qi.readimage(file)
     tot, flux = find_flux(image)
-    fluxes = np.append(fluxes,tot/10.)
+    fluxes = np.append(fluxes,flux)
+    totals = np.append(totals,tot)

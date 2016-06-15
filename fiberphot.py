@@ -9,38 +9,44 @@ from astropy.stats import sigma_clipped_stats
 from photutils import daofind
 
 
+
 path = './'
-files = glob.glob(path+"*fit")
+name='fiber_raw4*fit'
+files = glob.glob(path+name)
 
-image,header = qi.readimage(files[0],plot=True,siglo=2,sighi=2)
+def get_fiber_flux(file,fwhm=20,threshold=100):
 
-fwhm=10
-threshold=10
-mean, median, std = sigma_clipped_stats(image, sigma=3.0)
-source = daofind(image - median, fwhm=fwhm, threshold=threshold*std)
+    image,header = qi.readimage(file,plot=False)
+    mean, median, std = sigma_clipped_stats(image, sigma=3.0)
 
-ycen = np.int(np.round(source['xcentroid']))
-xcen = np.int(np.round(source['ycentroid']))
+    source = daofind(image - median, fwhm=fwhm, threshold=threshold*std)
+    xcen = np.int(np.round(source['xcentroid'][0]))
+    ycen = np.int(np.round(source['ycentroid'][0]))
 
-subim = image[xcen-100:xcen+100,ycen-100:ycen+100]
+    plt.plot([xcen],[ycen],'rx',markersize=20)
 
-qi.display_image(subim)
+    params = fitgaussian(image)
+    
+    y,x = params[1],params[2]
 
-#biases,bct = tp.get_files(dir=path, tag='Bias')
-#masterbias = tp.master_bias(biases,outdir='./')
+    apdict = tp.optimal_aperture(x,y,image,[150,160])
+    return apdict
 
-#darks,dct = tp.get_files(dir = path,tag='Dark')
-#masterdark = tp.master_dark(darks,bias=bias,outdir='./')
 
-#cal = image-dark-bias
+goodfiles = []
+for file in files:
+    phot = get_fiber_flux(file)
+    if phot['totflux'] < 8e7:
+        goodfiles = np.append(goodfiles,file)
+        
+totflux = []
+cog = np.zeros((100,len(goodfiles)))
+for i in range(len(goodfiles)):
+    phot = get_fiber_flux(goodfiles[i])
+    totflux = np.append(totflux,phot['totflux'])
+    cog[:,i] = phot['curve_of_growth'][1]
 
-cal = subim
-
-params = fitgaussian(cal)
-
-y,x = params[1],params[2]
-
-plt.plot([x],[y],'rx',markersize=20)
-
-apdict = tp.optimal_aperture(x,y,cal,[20,25])
-
+for i in range(np.shape(cog)[1]):
+    plt.plot(cog[:,i],label=str(totflux[i]))
+plt.legend()
+    

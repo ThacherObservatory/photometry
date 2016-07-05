@@ -235,3 +235,38 @@ def phot_all(image, xcen, ycen):
         flux = np.append(flux,phot['aperture_sum_bkgsub'])
         
     return flux
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#
+def cal_images(path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
+    
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
+        
+        
+    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
+    reffile = files[sz/2]
+    image0, header0 = qi.readimage(reffile)
+    ysz, xsz = np.shape(image0)
+    refim = h.pyfits.open(reffile)
+    refh = h.pyfits.getheader(reffile)
+   
+    for i in range(sz):
+        im = h.pyfits.open(files[i])
+        newim = h.hcongrid((im[0].data-dark-bias)/flat, im[0].header,refh)
+        files[i]=newim
+    
+    return files
+    
+    
+    
+    
+    

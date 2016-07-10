@@ -237,7 +237,8 @@ def phot_all(image, xcen, ycen):
     return flux
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
-def cal_images(path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
+
+def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bias=None,dark=None,flat=None):
     
     if not path:
         path = set_path()
@@ -253,19 +254,20 @@ def cal_images(path=None,band='gp',source='BD710031',bias=None,dark=None,flat=No
         
         
     files,sz = tp.get_files(dir=path, tag=source+'.'+band)
-    reffile = files[sz/2]
+    
+    reffile = files[bandindex]
     image0, header0 = qi.readimage(reffile)
-    ysz, xsz = np.shape(image0)
     refim = h.pyfits.open(reffile)
     refh = h.pyfits.getheader(reffile)
    
-    for i in range(sz):
-        im = h.pyfits.open(files[i])
-        newim = h.hcongrid((im[0].data-dark-bias)/flat, im[0].header,refh)
-        files[i]=newim
+    im = h.pyfits.open(files[bandindex])
+    newim = h.hcongrid((im[0].data-dark-bias)/flat, im[0].header,refh)
     
-    return files
-    
+    if plot:
+        qi.display_image(newim)
+        
+    return newim
+
     
     
     

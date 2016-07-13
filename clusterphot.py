@@ -257,7 +257,6 @@ def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bi
     
     reffile = files[bandindex]
     image0, header0 = qi.readimage(reffile)
-    refim = h.pyfits.open(reffile)
     refh = h.pyfits.getheader(reffile)
    
     im = h.pyfits.open(files[bandindex])
@@ -266,8 +265,46 @@ def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bi
     if plot:
         qi.display_image(newim)
         
-    return newim
+    return newim,header0
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#   
 
+def headerplot(xdata,ykeyword,path = None, band = 'gp', source = 'BD710031', bias = None, dark=None, flat=None):
+    
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
+    
+    ydata = []
+    headers = []
+    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
+    
+    for i in range(sz):
+        files[i],header = cal_image(plot=False,path=path,band=band,source=source,bandindex=i,bias=bias,dark=dark,flat=flat)
+        headers.append(header)
+        
+    for j in range(sz):
+        header = headers[j]
+        ydata.append(header[ykeyword])
+    
+    plt.plot(xdata,ydata)
+    
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#   
+    
+    
+    
+
+
+    
     
     
     

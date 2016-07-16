@@ -269,7 +269,8 @@ def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bi
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def headerplot(xdata,ykeyword,path = None, band = 'gp', source = 'BD710031', bias = None, dark=None, flat=None):
+def headerplot(fluxdata,ykeyword,path = None, band = 'gp', source = 'BD710031', bias = None, dark=None, flat=None):
+    
     
     if not path:
         path = set_path()
@@ -283,24 +284,54 @@ def headerplot(xdata,ykeyword,path = None, band = 'gp', source = 'BD710031', bia
     if length(flat) == 1:
         flat = make_flat(path=path,band=band,bias=bias,dark=dark)
     
-    ydata = []
+    keyworddata = []
     headers = []
     files,sz = tp.get_files(dir=path, tag=source+'.'+band)
     
+    #extract headers from each image
     for i in range(sz):
         files[i],header = cal_image(plot=False,path=path,band=band,source=source,bandindex=i,bias=bias,dark=dark,flat=flat)
         headers.append(header)
-        
+      
+    #extract keyword data from each header 
     for j in range(sz):
         header = headers[j]
-        ydata.append(header[ykeyword])
+        keyworddata.append(header[ykeyword])
     
-    plt.plot(xdata,ydata)
+    #for our particular use, which axes should flux and airmass go on?
+    #right now flux is on the y axis and airmass is on the x axis because the graph
+    #seems to look more 'normal', but it might be the other way
+    plt.plot(keyworddata,fluxdata)
     
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
+
+def flux_all(path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
+
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
+        
+    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
+    flux = []
     
-    
+    for i in range(sz):
+        image,header = cal_image(plot=False,path=path,band=band,source=source,bandindex=i,bias=bias,dark=dark,flat=flat)
+        w = wcs.WCS(header)
+        x,y = w.all_world2pix(float(header['TARGRA']), float(header['TARGDEC']), 1)
+        position = (float(x),float(y))
+        phot = do_phot(image, position)
+        flux = np.append(flux,phot['aperture_sum_bkgsub'])
+        
+    return flux
     
 
 

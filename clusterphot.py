@@ -269,7 +269,7 @@ def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bi
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def headerplot(fluxdata,ykeyword,path = None, band = 'gp', source = 'BD710031', bias = None, dark=None, flat=None):
+def headerplot(fluxdata,ykeyword,band = 'gp',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
     
     
     if not path:
@@ -297,11 +297,29 @@ def headerplot(fluxdata,ykeyword,path = None, band = 'gp', source = 'BD710031', 
     for j in range(sz):
         header = headers[j]
         keyworddata.append(header[ykeyword])
+        
+    #determine peak flux value, index and its header for annotation 
+    peakflux = max(fluxdata)
+    peakfluxindex = fluxdata.argmax()
+    keyworddataofpeakflux = keyworddata[peakfluxindex]
+        
+    #normalize flux data
+    nfluxdata = fluxdata
+    for q in range(len(fluxdata)):
+        nfluxdata[q] = nfluxdata[q]/peakflux
     
-    #for our particular use, which axes should flux and airmass go on?
-    #right now flux is on the y axis and airmass is on the x axis because the graph
-    #seems to look more 'normal', but it might be the other way
-    plt.plot(keyworddata,fluxdata)
+    #display plot; set y axis
+    plt.scatter(keyworddata,nfluxdata)
+    axes = plt.gca()
+    axes.set_ylim([0,1])
+    
+    #labels
+    plt.title(ykeyword.capitalize()+' v. Flux (Band: ' + band + ')')
+    plt.xlabel(ykeyword.capitalize())
+    plt.ylabel('Flux')
+    xcoord = keyworddataofpeakflux
+    ycoord = 1
+    plt.annotate('Peak Flux = '+str(peakflux), xy=(xcoord,ycoord), xytext=(xcoord ,ycoord - .05))
     
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   

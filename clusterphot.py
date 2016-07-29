@@ -269,7 +269,7 @@ def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bi
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def headerplot(fluxdata,ykeyword,band = 'gp',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
+def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
     
     
     if not path:
@@ -284,9 +284,17 @@ def headerplot(fluxdata,ykeyword,band = 'gp',path = None, source = 'BD710031', b
     if length(flat) == 1:
         flat = make_flat(path=path,band=band,bias=bias,dark=dark)
     
+    files,osz = tp.get_files(dir=path, tag=source+'.'+band)
+    #remove faulty images
+    sz = osz
+    if len(badimindices) != 0:
+        for g in range(osz):
+            if g in badimindices:
+                del files[g]
+                sz=sz-1
+    
     keyworddata = []
     headers = []
-    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
     
     #extract headers from each image
     for i in range(sz):
@@ -324,7 +332,7 @@ def headerplot(fluxdata,ykeyword,band = 'gp',path = None, source = 'BD710031', b
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def flux_all(path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
+def flux_all(path=None,band='gp',source='BD710031',badimindices = [],bias=None,dark=None,flat=None):
 
     if not path:
         path = set_path()
@@ -338,7 +346,15 @@ def flux_all(path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None
     if length(flat) == 1:
         flat = make_flat(path=path,band=band,bias=bias,dark=dark)
         
-    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
+    files,osz = tp.get_files(dir=path, tag=source+'.'+band)
+    sz = osz
+    #remove faulty images
+    if len(badimindices) != 0:
+        for g in range(osz):
+            if g in badimindices:
+                del files[g]
+                sz=sz-1
+            
     flux = []
     
     for i in range(sz):
@@ -351,9 +367,19 @@ def flux_all(path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None
         
     return flux
     
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#  
 
-
+def display_raws(path=None,band='gp',source='BD710031'):
     
+    if not path:
+        path = set_path()
+    
+    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
+    
+    for i in range(len(files)):
+        image = fits.getdata(files[i],0)
+        qi.display_image(image,fignum=i)
     
     
     

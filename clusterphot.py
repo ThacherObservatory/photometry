@@ -238,7 +238,7 @@ def phot_all(image, xcen, ycen):
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#
 
-def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bias=None,dark=None,flat=None):
+def cal_image(filepath,plot = True,path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
     
     if not path:
         path = set_path()
@@ -253,13 +253,10 @@ def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bi
         flat = make_flat(path=path,band=band,bias=bias,dark=dark)
         
         
-    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
-    
-    reffile = files[bandindex]
-    image0, header0 = qi.readimage(reffile)
-    refh = h.pyfits.getheader(reffile)
+    image0, header0 = qi.readimage(filepath)
+    refh = h.pyfits.getheader(filepath)
    
-    im = h.pyfits.open(files[bandindex])
+    im = h.pyfits.open(filepath)
     newim = h.hcongrid((im[0].data-dark-bias)/flat, im[0].header,refh)
     
     if plot:
@@ -269,8 +266,7 @@ def cal_image(plot = True,path=None,band='gp',source='BD710031',bandindex = 3,bi
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
-    
+def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',titleextra = '',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
     
     if not path:
         path = set_path()
@@ -297,8 +293,8 @@ def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',path = None, sour
     headers = []
     
     #extract headers from each image
-    for i in range(sz):
-        files[i],header = cal_image(plot=False,path=path,band=band,source=source,bandindex=i,bias=bias,dark=dark,flat=flat)
+    for file in files:
+        file,header = cal_image(file,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
         headers.append(header)
       
     #extract keyword data from each header 
@@ -306,7 +302,7 @@ def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',path = None, sour
         header = headers[j]
         keyworddata.append(header[ykeyword])
         
-    #determine peak flux value, index and its header for annotation 
+    #determine peak flux value, index, and its header for annotation 
     peakflux = max(fluxdata)
     peakfluxindex = fluxdata.argmax()
     keyworddataofpeakflux = keyworddata[peakfluxindex]
@@ -322,7 +318,7 @@ def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',path = None, sour
     axes.set_ylim([0,1])
     
     #labels
-    plt.title(ykeyword.capitalize()+' v. Flux (Band: ' + band + ')')
+    plt.title(ykeyword.capitalize()+' v. Flux (Band: ' + band + ')'+'\n'+titleextra)
     plt.xlabel(ykeyword.capitalize())
     plt.ylabel('Flux')
     xcoord = keyworddataofpeakflux
@@ -332,7 +328,7 @@ def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',path = None, sour
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def flux_all(path=None,band='gp',source='BD710031',badimindices = [],bias=None,dark=None,flat=None):
+def flux_all(path=None,band='gp',extraprecision=False,source='BD710031',badimindices = [],bias=None,dark=None,flat=None):
 
     if not path:
         path = set_path()
@@ -357,12 +353,21 @@ def flux_all(path=None,band='gp',source='BD710031',badimindices = [],bias=None,d
             
     flux = []
     
-    for i in range(sz):
-        image,header = cal_image(plot=False,path=path,band=band,source=source,bandindex=i,bias=bias,dark=dark,flat=flat)
+    for file in files:
+        image,header = cal_image(file,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
         w = wcs.WCS(header)
         x,y = w.all_world2pix(float(header['TARGRA']), float(header['TARGDEC']), 1)
+        if extraprecision == True:
+            for k in range(15):
+                op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
+                    tp.optimal_aperture(float(x),float(y),image,[k+10,k+15],use_old=True)
+                if check_aperture(file,op_ap):
+                    break
+        else:
+            op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
+                    tp.optimal_aperture(float(x),float(y),image,[10,15],use_old=True)
         position = (float(x),float(y))
-        phot = do_phot(image, position)
+        phot = do_phot(image,position,radius=op_ap)
         flux = np.append(flux,phot['aperture_sum_bkgsub'])
         
     return flux
@@ -380,7 +385,43 @@ def display_raws(path=None,band='gp',source='BD710031'):
     for i in range(len(files)):
         image = fits.getdata(files[i],0)
         qi.display_image(image,fignum=i)
+        
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------# 
+        
+def check_aperture(imfile,opap,rang=25,precision=1,path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
     
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
     
+    image,header = cal_image(imfile,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
     
+    flux = []
+    radii = range(rang)
+    
+    for k in radii:
+        w = wcs.WCS(header)
+        x,y = w.all_world2pix(float(header['TARGRA']), float(header['TARGDEC']), 1)
+        position = (float(x),float(y))
+        phot = do_phot(image,position,radius=k)
+        flux = np.append(flux,phot['aperture_sum_bkgsub'])
+        
+    peakfluxindex = flux.argmax()
+    apofpeakflux = radii[peakfluxindex]
+    
+    plt.scatter(radii,flux)
+    
+    if apofpeakflux - opap <= .5 and apofpeakflux - opap >= -.5:
+        return True
+    else:
+        return False
     

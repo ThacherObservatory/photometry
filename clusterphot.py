@@ -266,7 +266,7 @@ def cal_image(filepath,plot = True,path=None,band='gp',source='BD710031',bias=No
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',titleextra = '',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
+def headerplot(fluxdata,ykeyword='airmass',badimindices = [],band = 'gp',titleextra = '',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
     
     if not path:
         path = set_path()
@@ -318,7 +318,7 @@ def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',titleextra = '',p
     axes.set_ylim([0,1])
     
     #labels
-    plt.title(ykeyword.capitalize()+' v. Flux (Band: ' + band + ')'+'\n'+titleextra)
+    plt.title(ykeyword.capitalize()+' v. Flux (Band: ' + band + ')'+'\n'+'('+titleextra+')')
     plt.xlabel(ykeyword.capitalize())
     plt.ylabel('Flux')
     xcoord = keyworddataofpeakflux
@@ -328,7 +328,7 @@ def headerplot(fluxdata,ykeyword,badimindices = [],band = 'gp',titleextra = '',p
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------#   
 
-def flux_all(path=None,band='gp',extraprecision=False,source='BD710031',badimindices = [],bias=None,dark=None,flat=None):
+def flux_all(path=None,band='gp',extraprecision=True,extraprecisionrange=100,source='BD710031',badimindices = [],bias=None,dark=None,flat=None):
 
     if not path:
         path = set_path()
@@ -357,16 +357,17 @@ def flux_all(path=None,band='gp',extraprecision=False,source='BD710031',badimind
         image,header = cal_image(file,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
         w = wcs.WCS(header)
         x,y = w.all_world2pix(float(header['TARGRA']), float(header['TARGDEC']), 1)
+        position = (float(x),float(y))
         if extraprecision == True:
-            for k in range(15):
-                op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
-                    tp.optimal_aperture(float(x),float(y),image,[k+10,k+15],use_old=True)
-                if check_aperture(file,op_ap):
+            for k in range(extraprecisionrange):
+                if check_radii(image,header,position,rin=k+10,rout=k+15) == True:
+                    op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
+                        tp.optimal_aperture(float(x),float(y),image,[k+10,k+15],use_old=True)
                     break
         else:
             op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
                     tp.optimal_aperture(float(x),float(y),image,[10,15],use_old=True)
-        position = (float(x),float(y))
+        #print "Final aperture: " + str(op_ap)
         phot = do_phot(image,position,radius=op_ap)
         flux = np.append(flux,phot['aperture_sum_bkgsub'])
         
@@ -389,8 +390,12 @@ def display_raws(path=None,band='gp',source='BD710031'):
 #-------------------------------------------------------------------------#
 #-------------------------------------------------------------------------# 
         
-def check_aperture(imfile,opap,rang=25,precision=1,path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
-    
+def check_radii(image,header,position,rin,rout,path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
+    '''
+    Given inner and outer sky radii of an image and a star's coordinates,
+    returns False if the flux is increasing(so radii must increase) or vice versa 
+    '''
+    '''
     if not path:
         path = set_path()
 
@@ -405,23 +410,28 @@ def check_aperture(imfile,opap,rang=25,precision=1,path=None,band='gp',source='B
     
     image,header = cal_image(imfile,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
     
-    flux = []
     radii = range(rang)
     
-    for k in radii:
+    #for k in radii:
         w = wcs.WCS(header)
         x,y = w.all_world2pix(float(header['TARGRA']), float(header['TARGDEC']), 1)
         position = (float(x),float(y))
-        phot = do_phot(image,position,radius=k)
-        flux = np.append(flux,phot['aperture_sum_bkgsub'])
+    '''
+    flux = []
+    
+    phot1 = do_phot(image,position,radius=rin,r_in=rin,r_out=rout)
+    flux = np.append(flux,phot1['aperture_sum_bkgsub'])
+    phot2 = do_phot(image,position,radius=rin+1,r_in=rin,r_out=rout)
+    flux = np.append(flux,phot2['aperture_sum_bkgsub'])
         
-    peakfluxindex = flux.argmax()
-    apofpeakflux = radii[peakfluxindex]
+    #print "inner radius: " + str(rin)
+    #print "outer radius: " + str(rout)
+    #print "first flux: " + str(flux[0])
+    #print "second flux: " + str(flux[1])
     
-    plt.scatter(radii,flux)
-    
-    if apofpeakflux - opap <= .5 and apofpeakflux - opap >= -.5:
-        return True
-    else:
+    #check if flux is increasing
+    if flux[0] < flux[1]:
         return False
+    else:
+        return True
     

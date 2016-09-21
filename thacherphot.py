@@ -19,7 +19,7 @@ from length import *
 import scipy as sp
 import constants as c
 import matplotlib.patheffects as PathEffects
-
+import time
 #----------------------------------------------------------------------
 # Minerva Photometry Reduction Pipeline:
 #
@@ -62,7 +62,9 @@ import matplotlib.patheffects as PathEffects
 #            batch_phot.
 #          - New annotation for bias, readnoise and dark images.
 #          - Fixed subplot bug in "lightcurve" to allow for large 
-#            number of reference stars. 
+#            number of reference stars.
+# 6/13/16  - Updated output of optimal_aperture
+# (jswift)
 #----------------------------------------------------------------------
 
 # For interactive plotting
@@ -99,14 +101,14 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
 
     for file in files:
         # Allow for graceful opt out...
-	print "Press any key to quit, continuing in 1 second..."
-	timeout=1
-	rlist, wlist, xlist = select([sys.stdin], [], [], timeout)
-	if rlist:
+        print("Press any key to quit, continuing in 1 second...")
+        timeout=1
+        rlist, wlist, xlist = select([sys.stdin], [], [], timeout)
+        if rlist:
             break
 
         # Get image and header
-	data, header = fits.getdata(file, 0, header=True)
+        data, header = fits.getdata(file, 0, header=True)
                 
         # Get telescope RA and Dec as starting point
 
@@ -132,15 +134,15 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
 
             
         # Do some string handling
-	fname = file.split('/')[-1]
+        fname = file.split('/')[-1]
         outdir = file.split(fname)[0]+'astrometry'
         datadir = file.split(fname)[0]
-	ffinal = fname.split('.')[0]+'_solved.fits'
+        ffinal = fname.split('.')[0]+'_solved.fits'
 
 	# Don't redo astrometry unless clobber keyword set
-	if len(glob.glob(datadir+ffinal)) == 1 and not clobber:
-            print "Astrometry solution for "+fname+" already exists!"
-            print "Skipping..."
+        if len(glob.glob(datadir+ffinal)) == 1 and not clobber:
+            print("Astrometry solution for "+fname+" already exists!")
+            print("Skipping...")
         else:
 
 
@@ -223,15 +225,15 @@ def done_in(tmaster):
 
     if np.floor(hour) == 0 and np.floor(minute) == 0:
         tout = "done in {0:.2f} seconds"
-        print tout.format(sec)
+        print(tout.format(sec))
     elif np.floor(hour) == 0:
         tout = "done in {0:.0f} "+munit+" {1:.2f} seconds"
-        print tout.format(np.floor(minute),sec)
+        print(tout.format(np.floor(minute),sec))
     else:
         tout = "done in {0:.0f} "+hunit+" {1:.0f} "+munit+" {2:.2f} seconds"
-        print tout.format(np.floor(hour),np.floor(minute),sec)
+        print(tout.format(np.floor(hour),np.floor(minute),sec))
 
-    print " "
+    print(" ")
 
     return
 
@@ -289,7 +291,7 @@ def check_ast(file):
     try:
         crval1 = header["CRVAL1"]
     except:
-        print "Image has inadequate astrometry information"
+        print("Image has inadequate astrometry information")
         status = 1
 
     return status
@@ -338,7 +340,7 @@ def master_bias(files,write=True,outdir='./',readnoise=False,clobber=False,verbo
 
 # Don't redo master_bias unless clobber keyword set
     if len(glob.glob(outdir+'master_bias.fits')) == 1 and not clobber:
-        print "Master bias file already exists!"
+        print("Master bias file already exists!")
         master_bias = fits.getdata(outdir+'master_bias.fits',0,header=False)
         return master_bias
 
@@ -351,7 +353,7 @@ def master_bias(files,write=True,outdir='./',readnoise=False,clobber=False,verbo
 
 # Load stack array and get CCD temperatures
     for i in np.arange(fct):
-        print "Reading "+files[i].split('/')[-1]
+        print("Reading "+files[i].split('/')[-1])
         image, header = fits.getdata(files[i], 0, header=True)
         temps.append(header["CCD-TEMP"])
         stack[i,:,:] = image
@@ -359,13 +361,13 @@ def master_bias(files,write=True,outdir='./',readnoise=False,clobber=False,verbo
 # Calculate read noise directly from bias frames if prompted
     if readnoise:
         rn = np.zeros((ysz,xsz))
-        print "Starting readnoise calculation"
+        print("Starting readnoise calculation")
         tstart = time.time()
         for i in np.arange(ysz):
             for j in np.arange(xsz):
                 rn[i,j] = rb.std(stack[:,i,j])
             if verbose:
-                print "Row "+str(i)
+                print("Row "+str(i))
                 done_in(tstart)
 
 # Make a nice plot (after all that hard work)
@@ -487,11 +489,11 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
 
 # Don't redo master_dark unless clobber keyword set
     if len(glob.glob(outdir+'master_dark.fits')) == 1 and not clobber:
-        print "Master dark already exists!"
+        print("Master dark already exists!")
         master_dark = fits.getdata(outdir+'master_dark.fits',0,header=False)
         return master_dark
     elif len(glob.glob(outdir+'master_dark.fits')) == 1:
-        print 'you need to remove file: '+glob.glob(outdir+'master_dark.fits')[0]
+        print('you need to remove file: '+glob.glob(outdir+'master_dark.fits')[0])
         return
     
  # Get information from inputs and create stack array
@@ -504,12 +506,12 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
 
 # Load stack array and get CCD temperatures
     for i in np.arange(fct):
-        print "Reading "+files[i].split('/')[-1]
+        print("Reading "+files[i].split('/')[-1])
         image, header = fits.getdata(files[i], 0, header=True)
         exp = header["EXPOSURE"]
         exps.append(exp)
         temps.append(header["CCD-TEMP"])
-        if bias == None:
+        if length(bias) == 1:
             image /= exp
         else:
             image = (image-bias)/exp
@@ -526,11 +528,11 @@ def master_dark(files,bias=None,write=True,outdir='./',clobber=False,float32=Tru
     expmax = np.max(exps)
     expmin = np.min(exps)
 
-    print "Minimum CCD Temp. %.2f C" % tmin
-    print "Maximum CCD Temp. %.2f C" % tmax
-    print "CCD Temp. rms: %.3f C" % tsig
-    print "CCD Temp. mean: %.2f C" % tmean
-    print "CCD Temp. median: %.2f C" % tmed
+    print("Minimum CCD Temp. %.2f C" % tmin)
+    print("Maximum CCD Temp. %.2f C" % tmax)
+    print("CCD Temp. rms: %.3f C" % tsig)
+    print("CCD Temp. mean: %.2f C" % tmean)
+    print("CCD Temp. median: %.2f C" % tmed)
 
 # Create master dark by median filter
     master_dark = np.median(stack,axis=0)
@@ -626,7 +628,7 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
     
 # Don't redo master_dark unless clobber keyword set
     if len(glob.glob(outdir+'master_flat'+suffix+'.fits')) == 1 and not clobber:
-        print "Master flat already exists!"
+        print("Master flat already exists!")
         master_flat = fits.getdata(outdir+'master_flat'+suffix+'.fits',0, header=False)
         return master_flat
 
@@ -641,14 +643,14 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
 # Load stack array and get CCD temperatures
     meds = []   
     for i in np.arange(fct):
-        print "Reading "+files[i].split('/')[-1]
+        print("Reading "+files[i].split('/')[-1])
         image, header = fits.getdata(files[i], 0, header=True)
         image = np.float32(image)
         if header["filter"] != filter:
             sys.exit("Filters do not match!")
-        if bias != None:
+        if length(bias) > 1:
             image -= bias
-        if dark != None:
+        if length(dark) > 1:
             image -= dark
         meds.append(np.median(image))
         stack[i,:,:] = image/np.median(image)
@@ -682,9 +684,9 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
         hout["FILTER"] = (filter, "Filter used when taking image")
         hout["MEDCTS"] = (med, "Median counts in individual flat frames")
         hout["MEDSIG"] = (sig, "Median count RMS in individual flat frames")
-        if bias != None:
+        if length(bias) > 1:
             hout.add_comment("Bias subtracted")
-        if dark != None:
+        if length(dark) > 1:
             hout.add_comment("Dark subtracted")
 
         if len(glob.glob(outdir+'master_flat'+suffix+'.fits')) == 1:
@@ -703,7 +705,7 @@ def master_flat(files,bias=None,dark=None,write=True,outdir='./',
 # brightest_star                                                       #
 #----------------------------------------------------------------------#
 
-def brightest_star(file,min_distance=10,show=True,threshold_abs=None):
+def brightest_star(image,header,min_distance=10,show=True,threshold_abs=None):
 
     """
     Under development
@@ -714,7 +716,8 @@ def brightest_star(file,min_distance=10,show=True,threshold_abs=None):
     from skimage.feature import peak_local_max
     from skimage import data, img_as_float
     
-    image, header = fits.getdata(file, 0, header=True)
+#    image, header = fits.getdata(file, 0, header=True)
+    image = np.float32(image)
     if threshold_abs == None:
         threshold_abs = np.median(image) + 10.0*rb.std(image)
 
@@ -755,8 +758,8 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
 
 # Don't redo choose_refs unless clobber keyword set
     if len(glob.glob(outdir+outfile)) == 1 and not clobber:
-        print "Reference position file: "+outfile+" already exists!"
-        print "... reading saved positions"
+        print("Reference position file: "+outfile+" already exists!")
+        print("... reading saved positions")
         coords = np.loadtxt(outdir+outfile)
         ras = coords[:,0]
         decs = coords[:,1]
@@ -769,11 +772,11 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
 # Read image 
     image = fits.getdata(file, 0, header=False)
     ysz,xsz = image.shape
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if dark != None:
+    if length(flat) > 1:
         image /= flat
 
 # Read header
@@ -787,7 +790,7 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
     y0 = pix0[0,1]
 
     if (x0 > xsz) |(x0 < 0) | (y0 > ysz) | (y0 < 0):
-        print "Target star position is out of range!"
+        print("Target star position is out of range!")
         return
 
 # Get image information
@@ -813,9 +816,9 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
         if newx < xsz and newy < ysz and newx > 0 and newy > 0:
             refx.append(newx)
             refy.append(newy)
-            print "------------------------------"
-            print "refx = " , newx
-            print "refy = " , newy
+            print("------------------------------")
+            print("refx = " , newx)
+            print("refy = " , newy)
             ax.scatter(refx,refy,marker='o',s=100,facecolor='none',edgecolor='yellow',linewidth=1.5)
             plt.draw()
 
@@ -823,8 +826,8 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
     cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
 # Stall here such that canvas can disconnect before further calculations
-    print "Click positions of reference stars"
-    print raw_input("Press return when finished selecting sources \n")
+    print("Click positions of reference stars")
+    print(raw_input("Press return when finished selecting sources \n"))
 
 # Disengage "onclick"
     fig.canvas.mpl_disconnect(cid)
@@ -854,7 +857,7 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
 #            coords in "image" using defined skyradii = [in,out]       #
 #----------------------------------------------------------------------#
 
-def optimal_aperture(x,y,image,skyrad,aperture=None):
+def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
 
 # Create zoom in of target
     sz = 100
@@ -863,14 +866,19 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
     patch = image[y-sz/2:y+sz/2,x-sz/2:x+sz/2]
 
 # Fit 2D Guassian to target
-    params = fitgaussian(patch)
-    fit = gaussian(*params)
-    level = (np.max(patch) - np.median(patch))*np.array([0.95,0.5,0.1])
-    plt.contour(fit(*indices(patch.shape)),level,colors='blue')
-    aspect = min(params[3],params[4])/max(params[3],params[4])
-    fwhm = np.sqrt(params[3]*params[4])*2.0*np.sqrt(2*np.log(2))
-    norm = params[0] * 2.0 * np.pi * params[3] * params[4]
-    peak = params[0]
+    try:
+        params = fitgaussian(patch)
+        fit = gaussian(*params)
+        level = (np.max(patch) - np.median(patch))*np.array([0.95,0.5,0.1])
+        plt.contour(fit(*indices(patch.shape)),level,colors='blue')
+        aspect = min(params[3],params[4])/max(params[3],params[4])
+        fwhm = np.sqrt(params[3]*params[4])*2.0*np.sqrt(2*np.log(2))
+        norm = params[0] * 2.0 * np.pi * params[3] * params[4]
+        peak = params[0]
+    except:
+        print('Fit Failed')
+        aspect = np.nan ; fwhm = np.nan ; norm = np.nan ; peak = np.nan
+        fit = np.nan ; level = np.nan
 
 # Plot zoom in with fits overlaid
     sig = rb.std(patch)
@@ -896,16 +904,19 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
 
 # Chi Squared of Gaussian fit
     patchrms = np.sqrt(patch)
-    chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1)
-
-# Plot updated centroid location
+    try:
+        chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1)
+    except:
+        chisq =  np.nan
+    # Plot updated centroid location
     plt.scatter(sz/2+dx,sz/2+dy,marker='+',s=100,color='red',linewidth=1.5)
     plt.draw()
 
 # Optimize based on signal to noise from counts and background RMS
     flux = phot["flux"][:,0]
     skyrms = phot["skyrms"][0]    
-    sbg = skyrms*ap*np.sqrt(np.pi)
+    fluxerr = phot['fluxerr'][:,0]
+    sbg = skyrms*ap*np.sqrt(np.pi) # rms * sqrt(# of pixels in phot aperture)
     snr = flux/sqrt(sbg**2 + flux) 
     snrmax = np.max(snr)
     maxi = np.argmax(flux)
@@ -916,7 +927,8 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
     plt.figure(3)
     plt.clf()
     plt.subplot(2,1,1)
-    plt.plot(ap,flux/totflux)
+    cog = flux/totflux
+    plt.plot(ap,cog)
     plt.xlabel("aperture radius (pixels)")
     plt.ylabel("normalized flux")
     plt.annotate('Total Counts = %.f' % np.max(flux), [0.86,0.57],horizontalalignment='right',
@@ -941,8 +953,15 @@ def optimal_aperture(x,y,image,skyrad,aperture=None):
 
     plt.draw()
 
-    return op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq
+    dict = {'optimal_aperture':op_ap, 'xcen':xval, 'ycen':yval, 'fwhm':fwhm,
+            'aspect':aspect,'snrmax':snrmax,'totflux':totflux, 'totflux_aperture':totap,
+            'chisq':chisq,'curve_of_growth':[ap,cog]}
 
+    if use_old:
+        return op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq
+    else:
+        return dict
+            
 
 
 
@@ -977,6 +996,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         sys.exit("Must supply source spectral type")
 
     image,header = fits.getdata(file, 0, header=True)
+    image = np.float32(image)
     exptime = header["exptime"]
     if ra == None:
         object = header["object"]
@@ -1008,11 +1028,11 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         ypeak = pix0[0,1]
 
 
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if flat != None:
+    if length(flat) > 1:
         image /= flat
 
     op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
@@ -1138,7 +1158,7 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
     elif camera == 'iKON-L' and gain == None:
         gain = 8.1
 
-    print "Using a camera gain of %.2f" % gain
+    print("Using a camera gain of %.2f" % gain)
         
     if mag == None:
         sys.exit("Must supply source magnitude")
@@ -1146,6 +1166,7 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
         sys.exit("Must supply source spectral type")
 
     image,header = fits.getdata(files[0], 0, header=True)
+    image = np.float32(image)
 
 
     if not object:
@@ -1164,7 +1185,7 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
 
     for i in np.arange(len(files)):
         doplot = i == 0
-        print "File: "+files[i]
+        print("File: "+files[i])
         info = total_flux(files[i],mag=mag,SpT=SpT,ra=ra,dec=dec,name=object,gain=gain, \
                               doplot=doplot,outdir=outdir,filter=filter,camera=camera, \
                               brightest=brightest,flat=flat,bias=bias,dark=dark,skyrad=skyrad)
@@ -1207,13 +1228,14 @@ def do_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,
     
 # Get image and header
     image, header = fits.getdata(file, 0, header=True)
-
+    image = np.float32(image)
+    
 # Apply calibrations if provided
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if flat != None:
+    if length(flat) > 1:
         image /= flat
 
 # Get image info
@@ -1279,11 +1301,11 @@ def simple_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,b
     image, header = fits.getdata(file, 0, header=True)
 
 # Apply calibrations if provided
-    if bias != None:
+    if length(bias) > 1:
         image -= bias
-    if dark != None:
+    if length(dark) > 1:
         image -= dark
-    if flat != None:
+    if length(flat) > 1:
         image /= flat
 
 # Get image info
@@ -1336,9 +1358,6 @@ def simple_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,b
 
 
 
-
-
-
 #----------------------------------------------------------------------#
 # batch_phot:
 #      calculate photometry on list of files with designated file 
@@ -1351,8 +1370,8 @@ def batch_phot(files,ras,decs,bias=None,dark=None,flat=None,outdir='./',
 
 # Don't redo astrometry unless clobber keyword set
     if len(glob.glob(outdir+datafile)) == 1 and not clobber:
-        print "Photometry file: "+datafile+" already exists!"
-        print "Importing information..."
+        print("Photometry file: "+datafile+" already exists!")
+        print("Importing information...")
         info = pickle.load( open( outdir+datafile, "rb" ) )
         return info
 
@@ -1369,12 +1388,30 @@ def batch_phot(files,ras,decs,bias=None,dark=None,flat=None,outdir='./',
 
 # Loop through files
     for i in np.arange(fct):
-        print "Starting photometry of file: "+files[i].split('/')[-1]
+        print("Starting photometry of file: "+files[i].split('/')[-1])
         status = check_ast(files[i])
 #        if status == 0:
         jdval,xval,yval,fwhm,aspect,snr,exptime,fluxes,fluxerrors,skyvals,skyrmses = \
             do_phot(files[i],ras,decs,bias=bias,dark=dark,flat=flat,aperture=aperture,skyrad=skyrad)
-        print "Measured flux = %.4f" % fluxes[0]
+<<<<<<< refs/remotes/origin/master
+        try:
+            print "Measured flux = %.4f" % fluxes[0]
+            info["jd"]      = np.append(info["jd"],[jdval],axis=0)
+            info["x"]       = np.append(info["x"],xval,axis=0)
+            info["y"]       = np.append(info["y"],yval,axis=0)
+            info["fwhm"]    = np.append(info["fwhm"],[fwhm],axis=0)
+            info["aspect"]  = np.append(info["aspect"],[aspect],axis=0)
+            info["snr"]    = np.append(info["snr"],[snr],axis=0)
+            info["exptime"] = np.append(info["exptime"],[exptime],axis=0)
+            info["flux"][i,:]   = fluxes
+            info["flerr"][i,:]  = fluxerrors
+            info["sky"][i,:]    = skyvals
+            info["skyrms"][i,:] = skyrmses
+        except:
+            print 'Photometry failure!!'
+            #        pdb.set_trace()
+=======
+        print("Measured flux = %.4f" % fluxes[0])
         info["jd"]      = np.append(info["jd"],[jdval],axis=0)
         info["x"]       = np.append(info["x"],xval,axis=0)
         info["y"]       = np.append(info["y"],yval,axis=0)
@@ -1387,6 +1424,7 @@ def batch_phot(files,ras,decs,bias=None,dark=None,flat=None,outdir='./',
         info["sky"][i,:]    = skyvals
         info["skyrms"][i,:] = skyrmses
 
+>>>>>>> fixed python3 issues (indents and print calls)
 # Write out photometry data
     file = open(outdir+datafile, "w")
     pickle.dump(info, file)
@@ -1409,8 +1447,8 @@ def lightcurve(info,title='Light Curve',
     # Don't redo lightcurve unless clobber keyword set
     datafile = 'lightcurve.txt'
     if len(glob.glob(outdir+datafile)) == 1 and not clobber:
-        print "Light curve file: "+datafile+" already exists!"
-        print "Importing information..."
+        print("Light curve file: "+datafile+" already exists!")
+        print("Importing information...")
         jd, lc, err, exptime = np.loadtxt(outdir+datafile,unpack=True)
         return jd, lc, err, exptime
 
@@ -1490,8 +1528,8 @@ def lightcurve(info,title='Light Curve',
         cid = fig.canvas.mpl_connect('button_press_event', flagclick)
 
 # Stall here such that canvas can disconnect before further calculations
-        print "Click on points to flag"
-        print raw_input("Press RETURN when finished")
+        print("Click on points to flag")
+        print(raw_input("Press RETURN when finished"))
 
 # Disengage "baseclick"
         
@@ -1513,8 +1551,8 @@ def lightcurve(info,title='Light Curve',
         def baseclick(event):
             newx = event.xdata
             xvals.append(newx)
-            print "------------------------------"
-            print "xval = " , newx
+            print("------------------------------")
+            print("xval = " , newx)
             plt.axvline(x=newx,linestyle='--',color='k')
             plt.draw()
 
@@ -1522,20 +1560,20 @@ def lightcurve(info,title='Light Curve',
         cid = fig.canvas.mpl_connect('button_press_event', baseclick)
 
 # Stall here such that canvas can disconnect before further calculations
-        print "Click beginning and end of 2 baseline regions (4 selections)"
-        print raw_input("Press RETURN when finished")
+        print("Click beginning and end of 2 baseline regions (4 selections)")
+        print(raw_input("Press RETURN when finished"))
 
 # Disengage "baseclick"
         fig.canvas.mpl_disconnect(cid)
 
 # Check baseline region designations
         if len(xvals) > 4:
-            print "Baseline regions overspecified!"
-            print "Taking first 4 values"
+            print("Baseline regions overspecified!")
+            print("Taking first 4 values")
             xvals = xvals[0:3]
         if len(xvals) < 4: 
-            print "Baseline regions under specified!"
-            print "Returning..."
+            print("Baseline regions under specified!")
+            print("Returning...")
             return
         finds = np.where((jdred >= xvals[0]) & (jdred <= xvals[1]) | 
                          (jdred >= xvals[2]) & (jdred <= xvals[3]))
@@ -1572,7 +1610,7 @@ def lightcurve(info,title='Light Curve',
         plt.annotate(r'$\sigma$ = %.4f' % rms, [0.85,0.4],horizontalalignment='right',
                  xycoords='figure fraction',fontsize='large')
         plt.draw()
-        print raw_input("Press RETURN to continue... \n")
+        print(raw_input("Press RETURN to continue... \n"))
         
 
     lc = np.sum(ffinal*weights.reshape(n,1),axis=0)/np.sum(weights)

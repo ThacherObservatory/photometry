@@ -235,3 +235,203 @@ def phot_all(image, xcen, ycen):
         flux = np.append(flux,phot['aperture_sum_bkgsub'])
         
     return flux
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#
+
+def cal_image(filepath,plot = True,path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
+    
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
+        
+        
+    image0, header0 = qi.readimage(filepath)
+    refh = h.pyfits.getheader(filepath)
+   
+    im = h.pyfits.open(filepath)
+    newim = h.hcongrid((im[0].data-dark-bias)/flat, im[0].header,refh)
+    
+    if plot:
+        qi.display_image(newim)
+        
+    return newim,header0
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#   
+
+def headerplot(fluxdata,ykeyword='airmass',badimindices = [],band = 'gp',titleextra = '',path = None, source = 'BD710031', bias = None, dark=None, flat=None):
+    
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
+    
+    files,osz = tp.get_files(dir=path, tag=source+'.'+band)
+    #remove faulty images
+    sz = osz
+    if len(badimindices) != 0:
+        for g in range(osz):
+            if g in badimindices:
+                del files[g]
+                sz=sz-1
+    
+    keyworddata = []
+    headers = []
+    
+    #extract headers from each image
+    for file in files:
+        file,header = cal_image(file,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
+        headers.append(header)
+      
+    #extract keyword data from each header 
+    for j in range(sz):
+        header = headers[j]
+        keyworddata.append(header[ykeyword])
+        
+    #determine peak flux value, index, and its header for annotation 
+    peakflux = max(fluxdata)
+    peakfluxindex = fluxdata.argmax()
+    keyworddataofpeakflux = keyworddata[peakfluxindex]
+        
+    #normalize flux data
+    nfluxdata = fluxdata
+    for q in range(len(fluxdata)):
+        nfluxdata[q] = nfluxdata[q]/peakflux
+    
+    #display plot; set y axis
+    plt.scatter(keyworddata,nfluxdata)
+    axes = plt.gca()
+    axes.set_ylim([0,1])
+    
+    #labels
+    plt.title(ykeyword.capitalize()+' v. Flux (Band: ' + band + ')'+'\n'+'('+titleextra+')')
+    plt.xlabel(ykeyword.capitalize())
+    plt.ylabel('Flux')
+    xcoord = keyworddataofpeakflux
+    ycoord = 1
+    plt.annotate('Peak Flux = '+str(peakflux), xy=(xcoord,ycoord), xytext=(xcoord ,ycoord - .05))
+    
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#   
+
+def flux_all(path=None,band='gp',extraprecision=True,extraprecisionrange=100,source='BD710031',badimindices = [],bias=None,dark=None,flat=None):
+
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
+        
+    files,osz = tp.get_files(dir=path, tag=source+'.'+band)
+    sz = osz
+    #remove faulty images
+    if len(badimindices) != 0:
+        for g in range(osz):
+            if g in badimindices:
+                del files[g]
+                sz=sz-1
+            
+    flux = []
+    
+    for file in files:
+        image,header = cal_image(file,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
+        w = wcs.WCS(header)
+        x,y = w.all_world2pix(float(header['TARGRA']), float(header['TARGDEC']), 1)
+        position = (float(x),float(y))
+        if extraprecision == True:
+            for k in range(extraprecisionrange):
+                if check_radii(image,header,position,rin=k+10,rout=k+15) == True:
+                    op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
+                        tp.optimal_aperture(float(x),float(y),image,[k+10,k+15],use_old=True)
+                    break
+        else:
+            op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
+                    tp.optimal_aperture(float(x),float(y),image,[10,15],use_old=True)
+        #print "Final aperture: " + str(op_ap)
+        phot = do_phot(image,position,radius=op_ap)
+        flux = np.append(flux,phot['aperture_sum_bkgsub'])
+        
+    return flux
+    
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------#  
+
+def display_raws(path=None,band='gp',source='BD710031'):
+    
+    if not path:
+        path = set_path()
+    
+    files,sz = tp.get_files(dir=path, tag=source+'.'+band)
+    
+    for i in range(len(files)):
+        image = fits.getdata(files[i],0)
+        qi.display_image(image,fignum=i)
+        
+#-------------------------------------------------------------------------#
+#-------------------------------------------------------------------------# 
+        
+def check_radii(image,header,position,rin,rout,path=None,band='gp',source='BD710031',bias=None,dark=None,flat=None):
+    '''
+    Given inner and outer sky radii of an image and a star's coordinates,
+    returns False if the flux is increasing(so radii must increase) or vice versa 
+    '''
+    '''
+    if not path:
+        path = set_path()
+
+    if length(bias) == 1:
+        bias = make_bias(path=path)
+
+    if length(dark) == 1:
+        dark = make_dark(path=path)
+
+    if length(flat) == 1:
+        flat = make_flat(path=path,band=band,bias=bias,dark=dark)
+    
+    image,header = cal_image(imfile,plot=False,path=path,band=band,source=source,bias=bias,dark=dark,flat=flat)
+    
+    radii = range(rang)
+    
+    #for k in radii:
+        w = wcs.WCS(header)
+        x,y = w.all_world2pix(float(header['TARGRA']), float(header['TARGDEC']), 1)
+        position = (float(x),float(y))
+    '''
+    flux = []
+    
+    phot1 = do_phot(image,position,radius=rin,r_in=rin,r_out=rout)
+    flux = np.append(flux,phot1['aperture_sum_bkgsub'])
+    phot2 = do_phot(image,position,radius=rin+1,r_in=rin,r_out=rout)
+    flux = np.append(flux,phot2['aperture_sum_bkgsub'])
+        
+    #print "inner radius: " + str(rin)
+    #print "outer radius: " + str(rout)
+    #print "first flux: " + str(flux[0])
+    #print "second flux: " + str(flux[1])
+    
+    #check if flux is increasing
+    if flux[0] < flux[1]:
+        return False
+    else:
+        return True
+    

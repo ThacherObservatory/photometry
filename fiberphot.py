@@ -7,8 +7,9 @@ import glob
 from fitgaussian import *
 from astropy.stats import sigma_clipped_stats
 from photutils import daofind
+from plot_params import *
 
-
+plot_params()
 
 path = './'
 name='fiber_raw4*fit'
@@ -46,7 +47,20 @@ for i in range(len(goodfiles)):
     totflux = np.append(totflux,phot['totflux'])
     cog[:,i] = phot['curve_of_growth'][1]
 
-for i in range(np.shape(cog)[1]):
-    plt.plot(cog[:,i],label=str(totflux[i]))
-plt.legend()
     
+plt.figure(78)
+plt.clf()
+mflux = np.mean(totflux)
+for i in range(np.shape(cog)[1]):
+    plt.plot(cog[:,i]*totflux[i]/mflux)
+
+out = 'Normalization = '+str(mflux)+' counts'
+plt.annotate(out,[0.87,0.6],horizontalalignment='right', \
+             xycoords='figure fraction',fontsize='large')
+plt.axhline(y=1.0,color='k',ls='--',lw=2)
+plt.xlabel('Aperture radius (pixels)',fontsize=18)
+plt.ylabel('Normalized Flux',fontsize=18)
+plt.xlim(0,50)
+plt.title('curves of growth for fiber E output',fontsize=20)
+plt.savefig('fiber_raw4_curves.png',dpi=300)
+

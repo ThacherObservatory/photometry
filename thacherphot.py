@@ -1393,7 +1393,6 @@ def batch_phot(files,ras,decs,bias=None,dark=None,flat=None,outdir='./',
 #        if status == 0:
         jdval,xval,yval,fwhm,aspect,snr,exptime,fluxes,fluxerrors,skyvals,skyrmses = \
             do_phot(files[i],ras,decs,bias=bias,dark=dark,flat=flat,aperture=aperture,skyrad=skyrad)
-<<<<<<< refs/remotes/origin/master
         try:
             print "Measured flux = %.4f" % fluxes[0]
             info["jd"]      = np.append(info["jd"],[jdval],axis=0)
@@ -1410,7 +1409,6 @@ def batch_phot(files,ras,decs,bias=None,dark=None,flat=None,outdir='./',
         except:
             print 'Photometry failure!!'
             #        pdb.set_trace()
-=======
         print("Measured flux = %.4f" % fluxes[0])
         info["jd"]      = np.append(info["jd"],[jdval],axis=0)
         info["x"]       = np.append(info["x"],xval,axis=0)
@@ -1424,7 +1422,6 @@ def batch_phot(files,ras,decs,bias=None,dark=None,flat=None,outdir='./',
         info["sky"][i,:]    = skyvals
         info["skyrms"][i,:] = skyrmses
 
->>>>>>> fixed python3 issues (indents and print calls)
 # Write out photometry data
     file = open(outdir+datafile, "w")
     pickle.dump(info, file)

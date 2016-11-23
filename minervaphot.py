@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+#from astropy.io import fits
 import astropy.io.fits
 from astropy import wcs
 import pyfits as pf
@@ -107,7 +108,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
             break
 
         # Get image and header
-	data, header = pf.getdata(file, 0, header=True)
+	data, header = getdata(file, 0, header=True)
                 
         # Get telescope RA and Dec as starting point
 

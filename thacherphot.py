@@ -115,13 +115,13 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
         # Test if RA and Dec is in header
         guess = False
 
-        if header.has_key('OBJCTRA') and header.has_key('OBJCTDEC'):
+        if 'OBJCTRA' in header and 'OBJCTDEC' in header:
             RAdeg = angcor(header['OBJCTRA']).d
             DECdeg = angcor(header['OBJCTDEC']).d
             guess = True
 
         if object != None:
-            targ = astropy.coordinates.ICRSCoordinates.from_name(object)
+            targ = astropy.coordinates.SkyCoord.from_name(object)
             RAdeg = targ.ra.degree
             DECdeg = targ.dec.degree
             guess = True

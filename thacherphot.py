@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy import wcs
+from astropy.coordinates import SkyCoord
 import glob
 import astropy
 from astropysics.coords import AngularCoordinate as angcor
@@ -10,7 +11,7 @@ import robust as rb
 import djs_phot_mb as djs
 from select import select
 import sys
-#import strings
+import string
 import os
 import time
 import pickle
@@ -21,7 +22,7 @@ import constants as c
 import matplotlib.patheffects as PathEffects
 import time
 #----------------------------------------------------------------------
-# Minerva Photometry Reduction Pipeline:
+# Thacher Observatory Photometry Reduction Pipeline:
 #
 # NOTES:
 #
@@ -76,14 +77,14 @@ plt.ion()
 #----------------------------------------------------------------------#
 
 def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,object=None,field=0.5,
-                  numstars=10,downsample=4):
+                  numstars=100,downsample=4):
 
     """
     Overview:
     ---------
     Input list of FITS files and return solved FITS files to same 
     directory with suffix "_solved.fits"
-
+ls
     Requirements:
     -------------
     Astrometry.net routines with calibration tiles installed locally
@@ -121,7 +122,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
             guess = True
 
         if object != None:
-            targ = astropy.coordinates.SkyCoord.from_name(object)
+            targ = SkyCoord.from_name(object)
             RAdeg = targ.ra.degree
             DECdeg = targ.dec.degree
             guess = True
@@ -145,7 +146,6 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
             print("Skipping...")
         else:
 
-
         # Construct the command string
             if guess:
                 command=string.join(
@@ -162,6 +162,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
                      "--odds-to-tune-up 1e4",
                      "--no-tweak",
                      "--dir",outdir,"--overwrite"]) 
+                
             else: 
                 command=string.join(
                     [astrometrydotnet_dir+"/bin/solve-field",
@@ -177,10 +178,18 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
                      "--no-tweak",
                      "--dir",outdir,"--overwrite"]) 
                 
+            
+            rmcmd = "rm -rf "+outdir
+            os.system(rmcmd)
+            mkdircmd = 'mkdir '+outdir
+            os.system(mkdircmd)
+
             os.system(command)        
+
             outname = fname.split('.')[0]+'.new'
             mvcmd = "mv "+outdir+"/"+outname+" "+datadir+ffinal
             os.system(mvcmd)
+
             rmcmd = "rm -rf "+outdir
             os.system(rmcmd)
 
@@ -1001,7 +1010,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     if ra == None:
         object = header["object"]
         object.replace('_',' ')
-        targ = astropy.coordinates.ICRSCoordinates.from_name(object)
+        targ = SkyCoord.from_name(object)
         ra = targ.ra.degree
         dec = targ.dec.degree
 
@@ -1146,7 +1155,6 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
 
 def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=None,dark=None,bias=None,
                      outdir='./',filter='V',camera='U16m',gain=None,brightest=True,skyrad=[30,40]):
-    from astropy.coordinates import ICRSCoordinates as coords
  
     if camera == 'U16m' and gain == None:
         # gain = 1.4 (measured?)
@@ -1174,7 +1182,7 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
 
     if ra == None or dec == None:
         obj = object.replace('_',' ')
-        targ = coords.from_name(obj)
+        targ = SkyCoord.from_name(obj)
         ra = targ.ra.degree
         dec = targ.dec.degree
         

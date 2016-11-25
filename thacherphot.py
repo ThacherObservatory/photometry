@@ -17,6 +17,7 @@ import time
 import pickle
 import pdb
 from length import *
+from scipy.interpolate import interp1d as interp
 import scipy as sp
 import constants as c
 import matplotlib.patheffects as PathEffects
@@ -296,12 +297,12 @@ def check_ast(file):
     """
 
     image, header = fits.getdata(file, 0, header=True)
-    status = 0
+    status = True
     try:
         crval1 = header["CRVAL1"]
     except:
         print("Image has inadequate astrometry information")
-        status = 1
+        status = False
 
     return status
     
@@ -913,8 +914,11 @@ def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
 
 # Chi Squared of Gaussian fit
     patchrms = np.sqrt(patch)
+    xi,yi = np.where(patchrms == 0.0)
+    if len(xi) > 0:
+        patchrms[xi,yi] = 1.0
     try:
-        chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1)
+        chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1.0)
     except:
         chisq =  np.nan
     # Plot updated centroid location
@@ -970,10 +974,6 @@ def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
         return op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq
     else:
         return dict
-            
-
-
-
 
 
 
@@ -1044,15 +1044,16 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     if length(flat) > 1:
         image /= flat
 
-    op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
-        optimal_aperture(xpeak,ypeak,image,skyrad)
-    
-    dict["snr"] = snrmax
-    dict["fwhm"] = fwhm
-    dict["aspect"] = aspect
+    opdict = optimal_aperture(xpeak,ypeak,image,skyrad)
+
+    #ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq 
+
+    dict["snr"] = opdict['snrmax']
+    dict["fwhm"] = opdict['fwhm']
+    dict["aspect"] = opdict['aspect']
     
 
-    phot = djs.djs_phot(ypeak,xpeak,totap,skyrad,image,
+    phot = djs.djs_phot(ypeak,xpeak,opdict['totflux_aperture'],skyrad,image,
                         skyrms=True,flerr=True,skyval=True,cbox=10)
     
     flux = phot["flux"][0]/exptime
@@ -1067,44 +1068,44 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
 
     if camera == 'U16m':
         QEdata = np.loadtxt(dpath+'QE_U16m.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
         QEint = QEfunc(lam)
     elif camera == 'STL11000':
         QEdata = np.loadtxt(dpath+'QE_STL11000.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
         QEint = QEfunc(lam)
     elif camera == 'STL6303':
         QEdata = np.loadtxt(dpath+'QE_STL6303.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='linear')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='linear')
         QEint = QEfunc(lam)
     elif camera == 'iKON-L':
         QEdata = np.loadtxt(dpath+'QE_iKON-L.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
         QEint = QEfunc(lam)
 
     frefdata = np.loadtxt(dpath+'Vpassband.dat')
-    freffunc = sp.interpolate.interp1d(frefdata[:,0],frefdata[:,1],kind='cubic')
+    freffunc = interp(frefdata[:,0],frefdata[:,1],kind='cubic')
     frefint = freffunc(lam)
     inds = np.where(frefint < 0)
     frefint[inds] = 0.0
 
     if filter == 'V':
         fdata = np.loadtxt(dpath+'AstrodonTransmissionCurves.txt',skiprows=2)
-        ffunc = sp.interpolate.interp1d(fdata[:,0]*10.0,fdata[:,3]/100,kind='linear')
+        ffunc = interp(fdata[:,0]*10.0,fdata[:,3]/100,kind='linear')
         fint = ffunc(lam)
     elif filter == 'G':
         fdata = np.loadtxt(dpath+'BaaderG.txt')
-        ffunc = sp.interpolate.interp1d(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
+        ffunc = interp(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
         fint = ffunc(lam)
     
     stpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/Throughput/StellarTemplates/'
     sdata = np.loadtxt(stpath+SpT+'.dat')
-    starfunc = sp.interpolate.interp1d(sdata[:,0],sdata[:,1],kind='linear')
+    starfunc = interp(sdata[:,0],sdata[:,1],kind='linear')
     starint = starfunc(lam)
     starflux = starfunc(5500.0)
 
     refdata = np.loadtxt(stpath+'a0v.dat')
-    reffunc = sp.interpolate.interp1d(refdata[:,0],refdata[:,1],kind='linear')
+    reffunc = interp(refdata[:,0],refdata[:,1],kind='linear')
     refint = reffunc(lam)
     calflux = reffunc(5500.0)
 
@@ -1146,8 +1147,8 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     dict["tau"] = tau
     dict["tauerr"] = tauerr
     dict["exptime"] = exptime
-    dict["chisq"] = chisq
-    dict["aperture"] = totap
+    dict["chisq"] = opdict['chisq']
+    dict["aperture"] = opdict['totflux_aperture']
 
     return dict
 

@@ -994,8 +994,10 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
 
     if network == 'swift':
         dpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/TransCurves/'    
+        stpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/Throughput/StellarTemplates/'
     if network == 'katie':
         dpath = '/Users/ONeill/astronomy/data/TransCurves/'
+        stpath = '/Users/ONeill/astronomy/data/StellarTemplates/'
         
     obs = ephem.Observer()
     obs.lat = lat
@@ -1101,7 +1103,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         ffunc = interp(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
         fint = ffunc(lam)
     
-    stpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/Throughput/StellarTemplates/'
+
     sdata = np.loadtxt(stpath+SpT+'.dat')
     starfunc = interp(sdata[:,0],sdata[:,1],kind='linear')
     starint = starfunc(lam)

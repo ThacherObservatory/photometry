@@ -984,7 +984,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
                dark=None,bias=None,flat=None,ra=None,dec=None,
                lat='34 08 09.96',lon='-118 07 34.47',elevation=100.0,
                doplot=False,outdir='./',name='integrand',
-               camera='U16m',filter='V',brightest=True):
+               camera='U16m',filter='V',brightest=True,network='swift'):
 
     import ephem
     
@@ -992,8 +992,11 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
             "exptime":[], "jd":[], "snr":[], "chisq":[], "aperture":[],
              "xpos":[], "ypos":[]}
 
-    dpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/TransCurves/'    
-
+    if network == 'swift':
+        dpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/TransCurves/'    
+    if network == 'katie':
+        dpath = '/Users/ONeill/astronomy/data/TransCurves/'
+        
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -1155,7 +1158,8 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
 
 
 def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=None,dark=None,bias=None,
-                     outdir='./',filter='V',camera='U16m',gain=None,brightest=True,skyrad=[30,40]):
+                     outdir='./',filter='V',camera='U16m',gain=None,brightest=True,skyrad=[30,40],
+                     network='swift'):
  
     if camera == 'U16m' and gain == None:
         # gain = 1.4 (measured?)
@@ -1196,8 +1200,9 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
         doplot = i == 0
         print("File: "+files[i])
         info = total_flux(files[i],mag=mag,SpT=SpT,ra=ra,dec=dec,name=object,gain=gain, \
-                              doplot=doplot,outdir=outdir,filter=filter,camera=camera, \
-                              brightest=brightest,flat=flat,bias=bias,dark=dark,skyrad=skyrad)
+                          doplot=doplot,outdir=outdir,filter=filter,camera=camera, \
+                          brightest=brightest,flat=flat,bias=bias,dark=dark,skyrad=skyrad,
+                          network=network)
         data["tau"]     = np.append(data["tau"],info["tau"])
         data["tauerr"]  = np.append(data["tauerr"], info["tauerr"])
         data["flux"]    = np.append(data["flux"],   info["flux"])

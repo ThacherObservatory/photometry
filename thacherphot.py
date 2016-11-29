@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy import wcs
+from astropy.coordinates import SkyCoord
 import glob
 import astropy
 from astropysics.coords import AngularCoordinate as angcor
@@ -10,18 +11,19 @@ import robust as rb
 import djs_phot_mb as djs
 from select import select
 import sys
-#import strings
+import string
 import os
 import time
 import pickle
 import pdb
 from length import *
+from scipy.interpolate import interp1d as interp
 import scipy as sp
 import constants as c
 import matplotlib.patheffects as PathEffects
 import time
 #----------------------------------------------------------------------
-# Minerva Photometry Reduction Pipeline:
+# Thacher Observatory Photometry Reduction Pipeline:
 #
 # NOTES:
 #
@@ -76,14 +78,14 @@ plt.ion()
 #----------------------------------------------------------------------#
 
 def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,object=None,field=0.5,
-                  numstars=10,downsample=4):
+                  numstars=100,downsample=4):
 
     """
     Overview:
     ---------
     Input list of FITS files and return solved FITS files to same 
     directory with suffix "_solved.fits"
-
+ls
     Requirements:
     -------------
     Astrometry.net routines with calibration tiles installed locally
@@ -115,13 +117,13 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
         # Test if RA and Dec is in header
         guess = False
 
-        if header.has_key('OBJCTRA') and header.has_key('OBJCTDEC'):
+        if 'OBJCTRA' in header and 'OBJCTDEC' in header:
             RAdeg = angcor(header['OBJCTRA']).d
             DECdeg = angcor(header['OBJCTDEC']).d
             guess = True
 
         if object != None:
-            targ = astropy.coordinates.ICRSCoordinates.from_name(object)
+            targ = SkyCoord.from_name(object)
             RAdeg = targ.ra.degree
             DECdeg = targ.dec.degree
             guess = True
@@ -145,7 +147,6 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
             print("Skipping...")
         else:
 
-
         # Construct the command string
             if guess:
                 command=string.join(
@@ -162,6 +163,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
                      "--odds-to-tune-up 1e4",
                      "--no-tweak",
                      "--dir",outdir,"--overwrite"]) 
+                
             else: 
                 command=string.join(
                     [astrometrydotnet_dir+"/bin/solve-field",
@@ -177,10 +179,18 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
                      "--no-tweak",
                      "--dir",outdir,"--overwrite"]) 
                 
+            
+            rmcmd = "rm -rf "+outdir
+            os.system(rmcmd)
+            mkdircmd = 'mkdir '+outdir
+            os.system(mkdircmd)
+
             os.system(command)        
+
             outname = fname.split('.')[0]+'.new'
             mvcmd = "mv "+outdir+"/"+outname+" "+datadir+ffinal
             os.system(mvcmd)
+
             rmcmd = "rm -rf "+outdir
             os.system(rmcmd)
 
@@ -287,12 +297,12 @@ def check_ast(file):
     """
 
     image, header = fits.getdata(file, 0, header=True)
-    status = 0
+    status = True
     try:
         crval1 = header["CRVAL1"]
     except:
         print("Image has inadequate astrometry information")
-        status = 1
+        status = False
 
     return status
     
@@ -904,8 +914,11 @@ def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
 
 # Chi Squared of Gaussian fit
     patchrms = np.sqrt(patch)
+    xi,yi = np.where(patchrms == 0.0)
+    if len(xi) > 0:
+        patchrms[xi,yi] = 1.0
     try:
-        chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1)
+        chisq = np.sum((patch-fit(*indices(patch.shape)))**2/patchrms**2)/(sz**2 - len(params) - 1.0)
     except:
         chisq =  np.nan
     # Plot updated centroid location
@@ -961,10 +974,6 @@ def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
         return op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq
     else:
         return dict
-            
-
-
-
 
 
 
@@ -975,7 +984,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
                dark=None,bias=None,flat=None,ra=None,dec=None,
                lat='34 08 09.96',lon='-118 07 34.47',elevation=100.0,
                doplot=False,outdir='./',name='integrand',
-               camera='U16m',filter='V',brightest=True):
+               camera='U16m',filter='V',brightest=True,network='swift'):
 
     import ephem
     
@@ -983,8 +992,13 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
             "exptime":[], "jd":[], "snr":[], "chisq":[], "aperture":[],
              "xpos":[], "ypos":[]}
 
-    dpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/TransCurves/'    
-
+    if network == 'swift':
+        dpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/TransCurves/'    
+        stpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/Throughput/StellarTemplates/'
+    if network == 'katie':
+        dpath = '/Users/ONeill/astronomy/data/TransCurves/'
+        stpath = '/Users/ONeill/astronomy/data/StellarTemplates/'
+        
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -1001,7 +1015,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     if ra == None:
         object = header["object"]
         object.replace('_',' ')
-        targ = astropy.coordinates.ICRSCoordinates.from_name(object)
+        targ = SkyCoord.from_name(object)
         ra = targ.ra.degree
         dec = targ.dec.degree
 
@@ -1035,15 +1049,16 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     if length(flat) > 1:
         image /= flat
 
-    op_ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq = \
-        optimal_aperture(xpeak,ypeak,image,skyrad)
-    
-    dict["snr"] = snrmax
-    dict["fwhm"] = fwhm
-    dict["aspect"] = aspect
+    opdict = optimal_aperture(xpeak,ypeak,image,skyrad)
+
+    #ap,xval,yval,fwhm,aspect,snrmax,totflux,totap,chisq 
+
+    dict["snr"] = opdict['snrmax']
+    dict["fwhm"] = opdict['fwhm']
+    dict["aspect"] = opdict['aspect']
     
 
-    phot = djs.djs_phot(ypeak,xpeak,totap,skyrad,image,
+    phot = djs.djs_phot(ypeak,xpeak,opdict['totflux_aperture'],skyrad,image,
                         skyrms=True,flerr=True,skyval=True,cbox=10)
     
     flux = phot["flux"][0]/exptime
@@ -1058,44 +1073,44 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
 
     if camera == 'U16m':
         QEdata = np.loadtxt(dpath+'QE_U16m.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
         QEint = QEfunc(lam)
     elif camera == 'STL11000':
         QEdata = np.loadtxt(dpath+'QE_STL11000.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
         QEint = QEfunc(lam)
     elif camera == 'STL6303':
         QEdata = np.loadtxt(dpath+'QE_STL6303.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='linear')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='linear')
         QEint = QEfunc(lam)
     elif camera == 'iKON-L':
         QEdata = np.loadtxt(dpath+'QE_iKON-L.txt')
-        QEfunc = sp.interpolate.interp1d(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
+        QEfunc = interp(QEdata[:,0]*10.0,QEdata[:,1]/100.0,kind='cubic')
         QEint = QEfunc(lam)
 
     frefdata = np.loadtxt(dpath+'Vpassband.dat')
-    freffunc = sp.interpolate.interp1d(frefdata[:,0],frefdata[:,1],kind='cubic')
+    freffunc = interp(frefdata[:,0],frefdata[:,1],kind='cubic')
     frefint = freffunc(lam)
     inds = np.where(frefint < 0)
     frefint[inds] = 0.0
 
     if filter == 'V':
         fdata = np.loadtxt(dpath+'AstrodonTransmissionCurves.txt',skiprows=2)
-        ffunc = sp.interpolate.interp1d(fdata[:,0]*10.0,fdata[:,3]/100,kind='linear')
+        ffunc = interp(fdata[:,0]*10.0,fdata[:,3]/100,kind='linear')
         fint = ffunc(lam)
     elif filter == 'G':
         fdata = np.loadtxt(dpath+'BaaderG.txt')
-        ffunc = sp.interpolate.interp1d(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
+        ffunc = interp(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
         fint = ffunc(lam)
     
-    stpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/Throughput/StellarTemplates/'
+
     sdata = np.loadtxt(stpath+SpT+'.dat')
-    starfunc = sp.interpolate.interp1d(sdata[:,0],sdata[:,1],kind='linear')
+    starfunc = interp(sdata[:,0],sdata[:,1],kind='linear')
     starint = starfunc(lam)
     starflux = starfunc(5500.0)
 
     refdata = np.loadtxt(stpath+'a0v.dat')
-    reffunc = sp.interpolate.interp1d(refdata[:,0],refdata[:,1],kind='linear')
+    reffunc = interp(refdata[:,0],refdata[:,1],kind='linear')
     refint = reffunc(lam)
     calflux = reffunc(5500.0)
 
@@ -1137,16 +1152,16 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     dict["tau"] = tau
     dict["tauerr"] = tauerr
     dict["exptime"] = exptime
-    dict["chisq"] = chisq
-    dict["aperture"] = totap
+    dict["chisq"] = opdict['chisq']
+    dict["aperture"] = opdict['totflux_aperture']
 
     return dict
 
 
 
 def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=None,dark=None,bias=None,
-                     outdir='./',filter='V',camera='U16m',gain=None,brightest=True,skyrad=[30,40]):
-    from astropy.coordinates import ICRSCoordinates as coords
+                     outdir='./',filter='V',camera='U16m',gain=None,brightest=True,skyrad=[30,40],
+                     network='swift'):
  
     if camera == 'U16m' and gain == None:
         # gain = 1.4 (measured?)
@@ -1174,7 +1189,7 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
 
     if ra == None or dec == None:
         obj = object.replace('_',' ')
-        targ = coords.from_name(obj)
+        targ = SkyCoord.from_name(obj)
         ra = targ.ra.degree
         dec = targ.dec.degree
         
@@ -1187,8 +1202,9 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
         doplot = i == 0
         print("File: "+files[i])
         info = total_flux(files[i],mag=mag,SpT=SpT,ra=ra,dec=dec,name=object,gain=gain, \
-                              doplot=doplot,outdir=outdir,filter=filter,camera=camera, \
-                              brightest=brightest,flat=flat,bias=bias,dark=dark,skyrad=skyrad)
+                          doplot=doplot,outdir=outdir,filter=filter,camera=camera, \
+                          brightest=brightest,flat=flat,bias=bias,dark=dark,skyrad=skyrad,
+                          network=network)
         data["tau"]     = np.append(data["tau"],info["tau"])
         data["tauerr"]  = np.append(data["tauerr"], info["tauerr"])
         data["flux"]    = np.append(data["flux"],   info["flux"])

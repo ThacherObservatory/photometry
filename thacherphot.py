@@ -1102,6 +1102,10 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         fdata = np.loadtxt(dpath+'BaaderG.txt')
         ffunc = interp(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
         fint = ffunc(lam)
+    elif filter == 'Lum':
+        fdata = np.loadtxt(dpath+'Lumpassband.txt')
+        ffunc = interp(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
+        fint = ffunc(lam)
     
 
     sdata = np.loadtxt(stpath+SpT+'.dat')

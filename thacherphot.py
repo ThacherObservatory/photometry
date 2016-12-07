@@ -1098,7 +1098,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         fdata = np.loadtxt(dpath+'AstrodonTransmissionCurves.txt',skiprows=2)
         ffunc = interp(fdata[:,0]*10.0,fdata[:,3]/100,kind='linear')
         fint = ffunc(lam)
-    elif filter == 'G':
+    if filter == 'G':
         fdata = np.loadtxt(dpath+'BaaderG.txt')
         ffunc = interp(fdata[:,0]*10.0,fdata[:,1]/100,kind='linear')
         fint = ffunc(lam)

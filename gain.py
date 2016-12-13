@@ -10,17 +10,17 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import robust as rb
 
-def gain(flat1, flat2, masterdark, center=(0,0), sidelen):
+def gain(flat1, flat2, center=[50,50], sidelen=10):#(masterdark?)
     xcent = center[0]
     ycent = center[1]
 
-    Sum = fits.getdata(flat1)+fits.getdata(flat2)-(fits.getdatat(masterdark)*2)
-    Dif = fits.getdata(flat1)-fits.getdata(flat2)-(fits.getdata(masterdark)*2)
+    Sum = fits.getdata(flat1)+fits.getdata(flat2)#-(fits.getdatat(masterdark)*2)
+    Dif = fits.getdata(flat1)-fits.getdata(flat2)#-(fits.getdata(masterdark)*2)
 
     Sumimg = Sum/2.0
-
-    mean = np.mean(Sumimg[ycent-sidelen/2:ycent+sidelen/2][xcent-sidelen/2:xcent+sidelen/2])
-    variance = np.std(Dif[ycent-sidelen/2:ycent+sidelen/2][xcent-sidelen/2:xcent+sidelen/2])**2/2.0
+    mean = np.mean(Sumimg[ycent-(sidelen/2):ycent+(sidelen/2),xcent-(sidelen/2):xcent+(sidelen/2)])
+    variance = np.std(Dif[ycent-(sidelen/2):ycent+(sidelen/2),xcent-(sidelen/2):xcent+(sidelen/2)])**2/2.0
+    print mean, variance
     gain = 1/np.polyfit(mean,variance,1)[0]
 
     return gain

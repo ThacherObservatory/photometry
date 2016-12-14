@@ -29,7 +29,7 @@ def gain(flat1, flat2, center=[50,50], sidelen=10):#(masterdark?)
 #flat1 = np.random.normal(20.7,7,1000) #mean, std, size
 #flat2 = np.random.normal(20.7,7,1000)
 #masterdark = np.random.normal
-files = glob.glob('/Users/sara/python/gaintests/HS1_VS38_PA2_subframe/g*')
+files = glob.glob('/Users/georgelawrence/python/Astronomy/gaintests/g*')
 mean = []
 variance = []
 for ind,f in enumerate(files):
@@ -39,11 +39,10 @@ for ind,f in enumerate(files):
     except:
         mean.append(gain(f,files[0])[0])
         variance.append(gain(f,files[0])[1])
-
+        
 plt.figure(1)
 plt.clf()
 plt.ion()
 plt.plot(mean,variance,'ro')
 plt.show()
-
 print 1/np.polyfit(mean,variance,1)[0]

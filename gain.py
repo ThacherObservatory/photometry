@@ -10,52 +10,66 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import robust as rb
 import glob
+from plot_params import *
 
-def gain(flat1, flat2, center=[1300,1300], sidelen=100):#(masterdark?)
-
+def gain(file1, file2, center=[1300,1300], sidelen=100):#(masterdark?)
     xcent = center[0]
     ycent = center[1]
+    
+    flat1 = np.float64(fits.getdata(file1, header=False))
+    flat2 = np.float64(fits.getdata(file2,header=False))
+    Sum = (flat1+flat2)/2
+    Dif = flat1-flat2
 
-    Sum = fits.getdata(flat1, header=False)+fits.getdata(flat2,header=False)#-(fits.getdatat(masterdark)*2)
-    Dif = fits.getdata(flat1,header=False)-fits.getdata(flat2,header=False)#-(fits.getdata(masterdark)*2)
-
-    Sumimg = Sum/2.0
-    mean = np.mean(Sumimg[ycent-(sidelen/2):ycent+(sidelen/2),xcent-(sidelen/2):xcent+(sidelen/2)])
+    mean = np.mean(Sum[ycent-(sidelen/2):ycent+(sidelen/2),xcent-(sidelen/2):xcent+(sidelen/2)])
     variance = np.std(Dif[ycent-(sidelen/2):ycent+(sidelen/2),xcent-(sidelen/2):xcent+(sidelen/2)])**2/2.0
-    #gain = 1/np.polyfit(mean,variance,1)[0]
 
     return mean,variance
 
-#flat1 = np.random.normal(20.7,7,1000) #mean, std, size
-#flat2 = np.random.normal(20.7,7,1000)
-#masterdark = np.random.normal
-files = glob.glob('/Users/Julien/Dropbox/16Dec2016/gain*')
+
+inttimes = [2,4,6,8,10,12,14,16,18]
+
 mean = []
+meanerr = []
 variance = []
-numfiles = len(files)
-for i in 2*np.arange(numfiles/2):
-    print i
-    try:
-        if gain(files[i],files[i+1])[1]>9000:
-            print i,files[i]
-        else:
+varerr = []
 
-            mean.append(gain(files[i],files[i+1])[0])
-            variance.append(gain(files[i],files[i+1])[1])
-    except:
-        pass
-        #if gain(f,files[0])[1]>7000:
-        #    print f
-        #else:
-        #    mean.append(gain(f,files[0])[0])
-        #    variance.append(gain(f,files[0])[1])
+for int in inttimes:
+    print '... starting gain calculations for integration time of '+str(int)+ 'seconds'
+    print '--------------------------------------------------'
+    files = glob.glob('/Users/jonswift/Dropbox (Thacher)/Observatory/Data/Science/16Dec2016/gain*_'+str(int)+'.fit')
 
+    mntmp = []
+    vartmp = []
+    numfiles = len(files)
+    for i in 2*np.arange(numfiles/2):
+        print files[i].split('/')[-1],files[i+1].split('/')[-1]
+        print gain(files[i],files[i+1])
+        print ''
+        mntmp = np.append(mntmp,gain(files[i],files[i+1])[0])
+        vartmp = np.append(vartmp,gain(files[i],files[i+1])[1])
+    mean = np.append(mean,np.mean(mntmp))
+    meanerr = np.append(meanerr,np.std(mntmp))
+    variance = np.append(variance,np.mean(vartmp))
+    varerr = np.append(varerr,np.std(vartmp))
+
+plot_params()
 plt.figure(1)
 plt.clf()
 plt.ion()
-plt.plot(mean,variance,'ro')
+plt.errorbar(mean,variance,xerr=meanerr,yerr=varerr,fmt='o',color='k',capthick=1.5)
+plt.xlabel('Mean Value (counts)',fontsize=18)
+plt.ylabel('Variance',fontsize=18)
+fit,cov = np.polyfit(mean,variance,1,cov=True)
+gain  = 1/fit[0]
+gainerr = np.sqrt(cov[0,0])
+plt.annotate('gain = %.3f $\pm$ %.3f e$^-$/ADU'%(gain,gainerr),[0.15,0.8],
+             horizontalalignment='left',xycoords='figure fraction',fontsize=14)
+x = np.linspace(np.min(mean),np.max(mean),100)
+y = np.polyval(fit,x)
+plt.plot(x,y,'r--',lw=1.5)
+#plt.savefig('gain.png',dpi=300)
 plt.show()
-print 1/np.polyfit(mean,variance,1)[0]
 
 
 #gain(f,files[ind+1])[0]<18000 and gain(f,files[ind+1])[0]>12000 and

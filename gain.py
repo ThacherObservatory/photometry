@@ -32,19 +32,23 @@ def gain(flat1, flat2, center=[1300,1300], sidelen=100):#(masterdark?)
 files = glob.glob('/Users/Julien/Dropbox/16Dec2016/gain*')
 mean = []
 variance = []
-for ind,f in enumerate(files):
+numfiles = len(files)
+for i in 2*np.arange(numfiles/2):
+    print i
     try:
-        if gain(f,files[ind+1])[0]<14000 and gain(f,files[ind+1])[0]>12000 and gain(f,files[ind+1])[1]>8000:
-            print ind,f
+        if gain(files[i],files[i+1])[1]>9000:
+            print i,files[i]
         else:
-            mean.append(gain(f,files[ind+1])[0])
-            variance.append(gain(f,files[ind+1])[1])
+
+            mean.append(gain(files[i],files[i+1])[0])
+            variance.append(gain(files[i],files[i+1])[1])
     except:
-        if gain(f,files[0])[0]<14000 and gain(f,files[0])[0]>12000 and gain(f,files[0])[1]>8000:
-            print f
-        else:
-            mean.append(gain(f,files[0])[0])
-            variance.append(gain(f,files[0])[1])
+        pass
+        #if gain(f,files[0])[1]>7000:
+        #    print f
+        #else:
+        #    mean.append(gain(f,files[0])[0])
+        #    variance.append(gain(f,files[0])[1])
 
 plt.figure(1)
 plt.clf()
@@ -52,3 +56,7 @@ plt.ion()
 plt.plot(mean,variance,'ro')
 plt.show()
 print 1/np.polyfit(mean,variance,1)[0]
+
+
+#gain(f,files[ind+1])[0]<18000 and gain(f,files[ind+1])[0]>12000 and
+#gain(f,files[0])[0]<18000 and gain(f,files[0])[0]>12000 and

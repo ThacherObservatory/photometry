@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 import robust as rb
 import glob
 
-def gain(flat1, flat2, center=[50,50], sidelen=10):#(masterdark?)
+def gain(flat1, flat2, center=[1300,1300], sidelen=100):#(masterdark?)
 
     xcent = center[0]
     ycent = center[1]
-    
+
     Sum = fits.getdata(flat1, header=False)+fits.getdata(flat2,header=False)#-(fits.getdatat(masterdark)*2)
     Dif = fits.getdata(flat1,header=False)-fits.getdata(flat2,header=False)#-(fits.getdata(masterdark)*2)
 
@@ -29,17 +29,23 @@ def gain(flat1, flat2, center=[50,50], sidelen=10):#(masterdark?)
 #flat1 = np.random.normal(20.7,7,1000) #mean, std, size
 #flat2 = np.random.normal(20.7,7,1000)
 #masterdark = np.random.normal
-files = glob.glob('/Users/georgelawrence/python/Astronomy/gaintests/g*')
+files = glob.glob('/Users/Julien/Dropbox/16Dec2016/gain*')
 mean = []
 variance = []
 for ind,f in enumerate(files):
     try:
-        mean.append(gain(f,files[ind+1])[0])
-        variance.append(gain(f,files[ind+1])[1])
+        if gain(f,files[ind+1])[0]<14000 and gain(f,files[ind+1])[0]>12000 and gain(f,files[ind+1])[1]>8000:
+            print ind,f
+        else:
+            mean.append(gain(f,files[ind+1])[0])
+            variance.append(gain(f,files[ind+1])[1])
     except:
-        mean.append(gain(f,files[0])[0])
-        variance.append(gain(f,files[0])[1])
-        
+        if gain(f,files[0])[0]<14000 and gain(f,files[0])[0]>12000 and gain(f,files[0])[1]>8000:
+            print f
+        else:
+            mean.append(gain(f,files[0])[0])
+            variance.append(gain(f,files[0])[1])
+
 plt.figure(1)
 plt.clf()
 plt.ion()

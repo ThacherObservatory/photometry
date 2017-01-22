@@ -1,27 +1,21 @@
+import sys,string,os,time,pickle,pdb,glob,astropy
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy import wcs
 from astropy.coordinates import SkyCoord
-import glob
-import astropy
 from astropysics.coords import AngularCoordinate as angcor
 from fitgaussian import *
 import robust as rb
 import djs_phot_mb as djs
 from select import select
-import sys
-import string
-import os
-import time
-import pickle
-import pdb
 from length import *
 from scipy.interpolate import interp1d as interp
 import scipy as sp
 import constants as c
 import matplotlib.patheffects as PathEffects
-import time
+
 #----------------------------------------------------------------------
 # Thacher Observatory Photometry Reduction Pipeline:
 #
@@ -67,6 +61,9 @@ import time
 #            number of reference stars.
 # 6/13/16  - Updated output of optimal_aperture
 # (jswift)
+# 12/15/16 - Cleaned up import section of module
+#          - Use tqdm instead of "done_in" to monitor progress in read
+#            noise calculation
 #----------------------------------------------------------------------
 
 # For interactive plotting
@@ -85,7 +82,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
     ---------
     Input list of FITS files and return solved FITS files to same 
     directory with suffix "_solved.fits"
-ls
+
     Requirements:
     -------------
     Astrometry.net routines with calibration tiles installed locally
@@ -372,13 +369,12 @@ def master_bias(files,write=True,outdir='./',readnoise=False,clobber=False,verbo
     if readnoise:
         rn = np.zeros((ysz,xsz))
         print("Starting readnoise calculation")
-        tstart = time.time()
+        pbar = tqdm(desc = 'Calculating readnoise', total = ysz, unit = 'rows')
         for i in np.arange(ysz):
             for j in np.arange(xsz):
                 rn[i,j] = rb.std(stack[:,i,j])
-            if verbose:
-                print("Row "+str(i))
-                done_in(tstart)
+            pbar.update(1)
+
 
 # Make a nice plot (after all that hard work)
         aspect = np.float(xsz)/np.float(ysz)
@@ -780,7 +776,7 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
     dec0 = angcor(target_dec).d
 
 # Read image 
-    image = fits.getdata(file, 0, header=False)
+    image = fits.getdata(file, 0, header=False).astype('float')
     ysz,xsz = image.shape
     if length(bias) > 1:
         image -= bias
@@ -984,7 +980,8 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
                dark=None,bias=None,flat=None,ra=None,dec=None,
                lat='34 08 09.96',lon='-118 07 34.47',elevation=100.0,
                doplot=False,outdir='./',name='integrand',
-               camera='U16m',filter='V',brightest=True,network='swift'):
+               camera='U16m',filter='V',brightest=False,nearest=True,
+               network='swift'):
 
     import ephem
     
@@ -1032,7 +1029,31 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
     dict["secz"] = 1.0/np.cos(np.pi/2.0 - star.alt)
 
     if brightest == True:
-        xpeak,ypeak = brightest_star(file)
+        xpeak,ypeak = brightest_star(image,header)
+
+    elif nearest == True:
+        hdulist = astropy.io.fits.open(file)
+        w = wcs.WCS(hdulist[0].header)
+        world0 = np.array([[ra, dec]])
+        pix0 = w.wcs_world2pix(world0,1) # Pixel coordinates of (RA, DEC)
+        xpeak = pix0[0,0]
+        ypeak = pix0[0,1]
+        #plt.ion()
+        #plt.figure(934)
+        sz = 100
+        patch = image[ypeak-sz/2:ypeak+sz/2,xpeak-sz/2:xpeak+sz/2]
+        #plt.imshow(patch,vmin=np.median(patch)-2*np.std(patch),vmax=np.median(patch)+5*np.std(patch))
+        params = fitgaussian(patch)
+        fit = gaussian(*params)
+        level = (np.max(patch) - np.median(patch))*np.array([0.95,0.5,0.1])
+        #plt.contour(fit(*indices(patch.shape)),level,colors='blue')
+        aspect = min(params[3],params[4])/max(params[3],params[4])
+        fwhm = np.sqrt(params[3]*params[4])*2.0*np.sqrt(2*np.log(2))
+        norm = params[0] * 2.0 * np.pi * params[3] * params[4]
+        peak = params[0]
+        xpeak = params[2] + xpeak - sz/2
+        ypeak = params[1] + ypeak - sz/2
+        
     else:
         hdulist = astropy.io.fits.open(file)
         w = wcs.WCS(hdulist[0].header)
@@ -1041,7 +1062,7 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
         xpeak = pix0[0,0]
         ypeak = pix0[0,1]
 
-
+ 
     if length(bias) > 1:
         image -= bias
     if length(dark) > 1:
@@ -1164,8 +1185,8 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
 
 
 def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=None,dark=None,bias=None,
-                     outdir='./',filter='V',camera='U16m',gain=None,brightest=True,skyrad=[30,40],
-                     network='swift'):
+                     outdir='./',filter='V',camera='U16m',gain=None,brightest=False,nearest=True,
+                     skyrad=[30,40],network='swift'):
  
     if camera == 'U16m' and gain == None:
         # gain = 1.4 (measured?)
@@ -1192,8 +1213,8 @@ def batch_total_flux(files,ra=None,dec=None,mag=None,SpT=None,flat=None,object=N
         object = header["object"]
 
     if ra == None or dec == None:
-        obj = object.replace('_',' ')
-        targ = SkyCoord.from_name(obj)
+        #obj = object.replace('_',' ')
+        targ = SkyCoord.from_name(object)
         ra = targ.ra.degree
         dec = targ.dec.degree
         

@@ -770,7 +770,6 @@ def choose_refs(file,target_ra,target_dec,bias=None,dark=None,flat=None,
         ras = coords[:,0]
         decs = coords[:,1]
         return ras,decs
-
 # Convert ra and dec strings to decimal degree floats
     ra0  = angcor(target_ra).d
     dec0 = angcor(target_dec).d
@@ -1304,8 +1303,7 @@ def do_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,
     plt.draw()
     
 # Get the optimal aperture (max SNR) for the image based on the target star
-    ap,xval,yval,fwhm,aspect,snr,totflux,totap,chisq = \
-        optimal_aperture(xpix[0],ypix[0],image,skyrad,aperture=aperture)
+    dict = optimal_aperture(xpix[0],ypix[0],image,skyrad,aperture=aperture)
 
     if aperture != None: ap = aperture
 
@@ -1325,10 +1323,8 @@ def do_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,
             skyval[i] = phot["skyval"]
             skyrms[i] = phot["skyrms"]
             
-    return jd,xval,yval,fwhm,aspect,snr,exptime,flux,flerr,skyval,skyrms
+    return jd,dict,exptime,flux,flerr,skyval,skyrms
 
-
-    
 #----------------------------------------------------------------------#
 # simple_phot:                                                             #
 #    given a file and the ra and dec coordinates of stars, return 

@@ -11,11 +11,12 @@ import matplotlib.pyplot as plt
 import robust as rb
 import glob
 from plot_params import *
+import thacherphot as tp
 
 def gain(file1, file2, center=[1300,1300], sidelen=100):#(masterdark?)
     xcent = center[0]
     ycent = center[1]
-    
+
     flat1 = np.float64(fits.getdata(file1, header=False))
     flat2 = np.float64(fits.getdata(file2,header=False))
     Sum = (flat1+flat2)/2
@@ -34,10 +35,18 @@ meanerr = []
 variance = []
 varerr = []
 
+biases = glob.glob('/Users/Julien/Dropbox/22Jan2017/gainhs3vs38pag1*_0.fit')
+
+bias = np.median(tp.master_bias(biases))
+biaserr = np.std(tp.master_bias(biases))
+hs_speed = 3.00
+vs_speed = 38
+pag = 1.00
+
 for int in inttimes:
     print '... starting gain calculations for integration time of '+str(int)+ 'seconds'
     print '--------------------------------------------------'
-    files = glob.glob('/Users/jonswift/Dropbox (Thacher)/Observatory/Data/Science/16Dec2016/gain*_'+str(int)+'.fit')
+    files = glob.glob('//Users/Julien/Dropbox/22Jan2017/gainhs3vs38pag1*_'+str(int)+'.fit')
 
     mntmp = []
     vartmp = []
@@ -63,11 +72,12 @@ plt.ylabel('Variance',fontsize=18)
 fit,cov = np.polyfit(mean,variance,1,cov=True)
 gain  = 1/fit[0]
 gainerr = np.sqrt(cov[0,0])
-plt.annotate('gain = %.3f $\pm$ %.3f e$^-$/ADU'%(gain,gainerr),[0.15,0.8],
+plt.annotate('HS Speed = %.3f \nVS Speed = %.1f \nPre-Amp Gain = %.3f \ngain = %.3f $\pm$ %.3f e$^-$/ADU \nbias = %.3f $\pm$ %.3f'%(hs_speed,vs_speed,pag,gain,gainerr,bias,biaserr),[0.15,0.7],
              horizontalalignment='left',xycoords='figure fraction',fontsize=14)
 x = np.linspace(np.min(mean),np.max(mean),100)
 y = np.polyval(fit,x)
 plt.plot(x,y,'r--',lw=1.5)
+plt.title('Gain Measurement')
 #plt.savefig('gain.png',dpi=300)
 plt.show()
 

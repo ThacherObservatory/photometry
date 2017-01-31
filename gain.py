@@ -2,7 +2,7 @@
 """
 Created on Thu Dec  1 21:15:56 2016
 
-@author: sara
+@author: Lub, Gorg, SYao
 """
 
 import numpy as np
@@ -13,6 +13,15 @@ import glob
 from plot_params import *
 import thacherphot as tp
 
+"""
+IMPORTANT INSTRUCTIONS READ THEM OR THIS WONT DO ANYTHING
+1. change the directory in lines 43 and 54 to the directory containing the images, and
+customize the filename section to match the format of your filenames.
+2. make inttimes (line 37) contain all times you took images for except 0.
+3. in line 23, place center in optimal area (for andor it is there already)
+4. in lines 50-52 specify the camera settings (to display on graph)
+5. change savefig settings on line 92
+"""
 def gain(file1, file2, center=[1300,1300], sidelen=100):#(masterdark?)
     xcent = center[0]
     ycent = center[1]
@@ -40,7 +49,7 @@ biases = glob.glob('/Users/Julien/Dropbox/22Jan2017/gainhs3vs38pag1*_0.fit')
 bias = np.median(tp.master_bias(biases))
 biaserr = np.std(tp.master_bias(biases))
 hs_speed = 3.00
-vs_speed = 38
+vs_speed = 38.549999
 pag = 1.00
 
 for int in inttimes:
@@ -72,7 +81,7 @@ plt.ylabel('Variance',fontsize=18)
 fit,cov = np.polyfit(mean,variance,1,cov=True)
 gain  = 1/fit[0]
 gainerr = np.sqrt(cov[0,0])
-plt.annotate('HS Speed = %.3f \nVS Speed = %.1f \nPre-Amp Gain = %.3f \ngain = %.3f $\pm$ %.3f e$^-$/ADU \nbias = %.3f $\pm$ %.3f'%(hs_speed,vs_speed,pag,gain,gainerr,bias,biaserr),[0.15,0.7],
+plt.annotate('HS Speed $=$ %.3f \nVS Speed $=$ %.1f \nPre-Amp Gain $=$ %.3f \nGain $=$ %.3f $\pm$ %.3f e$^-$/ADU \nBias $=$ %.3f $\pm$ %.3f'%(hs_speed,vs_speed,pag,gain,gainerr,bias,biaserr),[0.15,0.675],
              horizontalalignment='left',xycoords='figure fraction',fontsize=14)
 x = np.linspace(np.min(mean),np.max(mean),100)
 y = np.polyval(fit,x)
@@ -80,6 +89,7 @@ plt.plot(x,y,'r--',lw=1.5)
 plt.title('Gain Measurement')
 #plt.savefig('gain.png',dpi=300)
 plt.show()
+plt.safefig('gain1')
 
 
 #gain(f,files[ind+1])[0]<18000 and gain(f,files[ind+1])[0]>12000 and

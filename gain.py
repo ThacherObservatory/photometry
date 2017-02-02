@@ -15,11 +15,11 @@ import thacherphot as tp
 
 """
 IMPORTANT INSTRUCTIONS READ THEM OR THIS WONT DO ANYTHING
-1. change the directory in lines 43 and 54 to the directory containing the images, and
+1. change the directory in lines 47 and 58 to the directory containing the images, and
 customize the filename section to match the format of your filenames.
-2. make inttimes (line 37) contain all times you took images for except 0.
-3. in line 23, place center in optimal area (for andor it is there already)
-4. in lines 50-52 specify the camera settings (to display on graph)
+2. make inttimes (line 40) contain all times you took images for except 0.
+3. in line 25, place center in optimal area (for andor it is there already)
+4. in lines 51-53 specify the camera settings (to display on graph)
 5. change savefig settings on line 92
 """
 def gain(file1, file2, center=[1300,1300], sidelen=100):#(masterdark?)
@@ -37,25 +37,25 @@ def gain(file1, file2, center=[1300,1300], sidelen=100):#(masterdark?)
     return mean,variance
 
 
-inttimes = [2,4,6,8,10,12,14,16,18]
+inttimes = [2,4,6,8,10,12,14,16,18,20]
 
 mean = []
 meanerr = []
 variance = []
 varerr = []
 
-biases = glob.glob('/Users/Julien/Dropbox/22Jan2017/gainhs3vs38pag1*_0.fit')
+biases = glob.glob('/Users/Julien/Dropbox/19Jan2017/gainhs3vs76pag2*_0.fit')
 
 bias = np.median(tp.master_bias(biases))
 biaserr = np.std(tp.master_bias(biases))
 hs_speed = 3.00
-vs_speed = 38.549999
-pag = 1.00
+vs_speed = 76.949997#38.549999
+pag = 2.00
 
 for int in inttimes:
     print '... starting gain calculations for integration time of '+str(int)+ 'seconds'
     print '--------------------------------------------------'
-    files = glob.glob('//Users/Julien/Dropbox/22Jan2017/gainhs3vs38pag1*_'+str(int)+'.fit')
+    files = glob.glob('/Users/Julien/Dropbox/19Jan2017/gainhs3vs76pag2*_'+str(int)+'.fit')
 
     mntmp = []
     vartmp = []
@@ -89,7 +89,7 @@ plt.plot(x,y,'r--',lw=1.5)
 plt.title('Gain Measurement')
 #plt.savefig('gain.png',dpi=300)
 plt.show()
-plt.safefig('gain1')
+plt.savefig('gainhs3vs76pag2.png')
 
 
 #gain(f,files[ind+1])[0]<18000 and gain(f,files[ind+1])[0]>12000 and

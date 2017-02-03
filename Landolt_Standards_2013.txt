@@ -60,9 +60,8 @@
 #Column	pmRA	(F6.1)	Proper motion in Right Ascension (1)	[ucd=pos.pm;pos.eq.ra]
 #Column	pmDE	(F6.1)	Proper motion in Declination (1)	[ucd=pos.pm;pos.eq.dec]
 #Column	SimbadName	(A23)	Designation understandable by the {\bf\fg{FireBrick}Simbad} data-base	[ucd=meta.id]
-Name|N|Vmag|e_Vmag|B-V|U-B|V-R|R-I|V-I|No|Nn|RAJ2000|DEJ2000|2MASS|pmRA|pmDE|SimbadName
  | |mag|mag|mag|mag|mag|mag|mag| | |"h:m:s"|"d:m:s"| |mas/yr|mas/yr|
-------------|-|------|-------|------|------|------|------|------|--|--|------------|------------|-----------------|------|------|-----------------------
+Name|N|Vmag|e_Vmag|B-V|U-B|V-R|R-I|V-I|No|Nn|RAJ2000|DEJ2000|2MASS|pmRA|pmDE|SimbadName
 GD 2B       | |13.279| 0.0010| 0.588|-0.001| 0.350| 0.349| 0.697|19|10|00 07 25.484|+33 19 00.17|J00072547+3319002|  -9.6| -21.6|2MASS J00072547+3319002
 GD 2A       | |14.853| 0.0024| 0.912| 0.684| 0.530| 0.462| 1.002|17| 8|00 07 26.174|+33 18 19.18|J00072616+3318191| -17.3|  -9.7|2MASS J00072616+3318191
 GD 2        |N|13.802| 0.0015|-0.295|-1.192|-0.142|-0.171|-0.313|26|13|00 07 32.261|+33 17 27.62|J00073225+3317275| -78.1| -66.7|2MASS J00073225+3317275

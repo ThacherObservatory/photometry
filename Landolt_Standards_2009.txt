@@ -64,9 +64,8 @@
 #Column	pmDE	(F8.2)	Proper motion in Declination	[ucd=pos.pm;pos.eq.dec]
 #Column	Ref	(I1)	Proper motion reference (1)	[ucd=meta.ref;pos.pm;pos.frame]
 #Column	SimbadName	(a20)	Designation understandable by the {\bf\fg{FireBrick}Simbad} data-base	[ucd=meta.id]
-Name|Vmag|e_Vmag|B-V|e_B-V|U-B|e_U-B|V-R|e_V-R|R-I|e_R-I|V-I|e_V-I|Nobs|Nnig|RAJ2000|DEJ2000|UCAC2|2MASS-PSC|pmRA|pmDE|Ref|SimbadName
  |mag|mag|mag|mag|mag|mag|mag|mag|mag|mag|mag|mag| | |"h:m:s"|"d:m:s"| | |mas/yr|mas/yr| |
------------|------|-------|------|-------|------|-------|------|-------|------|-------|------|-------|---|---|------------|------------|--------|-----------------|--------|--------|-|--------------------
+Name|Vmag|e_Vmag|B-V|e_B-V|U-B|e_U-B|V-R|e_V-R|R-I|e_R-I|V-I|e_V-I|Nobs|Nnig|RAJ2000|DEJ2000|UCAC2|2MASS-PSC|pmRA|pmDE|Ref|SimbadName
 TPhe I     |14.820| 0.0026| 0.764| 0.0032| 0.338| 0.0072| 0.422| 0.0036| 0.395| 0.0098| 0.817| 0.0110| 25| 13|00 30 04.593|-46 28 10.17|11909220|J00300459-4628102|   13.60|   -8.50|1|[L92b] TPhe I
 TPhe A     |14.651| 0.0028| 0.793| 0.0046| 0.380| 0.0071| 0.435| 0.0019| 0.405| 0.0035| 0.841| 0.0032| 29| 12|00 30 09.594|-46 31 28.91|11679110|J00300959-4631289|    8.30|   -2.00|1|[L92b] TPhe A
 TPhe H     |14.942| 0.0029| 0.740| 0.0029| 0.225| 0.0071| 0.425| 0.0035| 0.425| 0.0077| 0.851| 0.0098| 23| 12|00 30 09.683|-46 27 24.30|11909222|J00300968-4627243|   11.20|   -8.10|1|[L92b] TPhe H

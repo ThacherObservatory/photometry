@@ -19,7 +19,7 @@ def read_data(data):
         dataline = data['Name'][i]+'f'+data['RAJ2000'][i]+data['DEJ2000'][i]+data['Vmag'][i]
     body = ephem.readdb(dataline)
 
-def body_info(date, starttime, endtime, position, ra, dec, plot=False):
+def star_info(date, starttime, endtime, position, ra, dec, plot=False):
     """
     This function returns the altitude and azimuth of stars of certain magnitude within a time period
     """
@@ -36,4 +36,7 @@ def body_info(date, starttime, endtime, position, ra, dec, plot=False):
             body.append()
     az = body.az
     alt = body.alt
-    return risetime, settime, az, alt
+
+    info = {'risetime':risetime,'settime':settime,'azimuth':az,'altitude':alt}
+
+    return info

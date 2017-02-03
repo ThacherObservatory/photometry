@@ -14,54 +14,26 @@ thob.long = ephem.degrees("-119.1773417")
 thob.lat = ephem.degrees("34.467028")
 thob.elevation = 504.4
 
-def body(ra, dec):
-    body = ephem.FixedBody(ra=ra,dec=dec)
-    body.compute(thob)
-    return body.az, body.alt
+def read_data(data):
+    for i in len(data)
+        dataline = data['Name'][i]+'f'+data['RAJ2000'][i]+data['DEJ2000'][i]+data['Vmag'][i]
+    body = ephem.readdb(dataline)
 
-def riseset(year, month, day, position, ra, dec, plot=False):
-
-    a = []
-    t = range(0,1440) #np.array([datetime.datetime(2016,4,6,i,m,0) for i in range(24) for m in range(60)])
-
-    for d in [datetime.datetime(year,month,day,i,m,0) for i in range(24) for m in range(60)]:
-        thob.date = d
-        sun = ephem.Sun(thob) #put coordinate of star here
-        a.append(sun.alt + np.radians(0.25))
-
-    a = np.array(a)
-    t = np.array(t)
-    if plot:
-        pl.title('The Altitude of the Sun')
-        pl.ylabel('Time in minutes',)
-        pl.xlabel('Altitude')
-        pl.plot(a, t, 'ro')#, xnew, ynew, '-')
-        pl.axvline(x=0, color = 'b',linestyle = 'dashdot')
-        pl.axvline(x=-0.20943951,color = 'b',linestyle = 'dashdot')
-        pl.axvline(x=-0.314159265, color = 'b',linestyle = 'dashdot')
-        inds, = np.where((a>-0.4) & (a<0.1))
-        pl.plot(a[inds],t[inds],'ko')
-        pl.show()
-
-    m = np.diff(a[inds])
-    rinds = np.where(m > 0)
-    risea = a[inds][rinds]
-    riset = t[inds][rinds]
-    risefunc = interpolate.interp1d(risea, riset)
-    risetime = risefunc(np.radians(position))
-    risehour = risetime//60
-    riseminute = risetime % 60
-    risesecond = int((risetime - int(risetime))*60)
-    sunrise = '%d:%d:%d' % (risehour, riseminute, risesecond)
-
-    sinds = np.where(m < 0)
-    seta = a[inds][sinds]
-    sett = t[inds][sinds]
-    setfunc = interpolate.interp1d(seta, sett)
-    settime = setfunc(np.radians(position))
-    sethour = settime//60
-    setminute = settime % 60
-    setsecond = int((settime - int(settime))*60)
-    sunset = '%d:%d:%d' % (sethour, setminute, setsecond)
-
-    return sunrise, sunset
+def body_info(date, starttime, endtime, position, ra, dec, plot=False):
+    """
+    This function returns the altitude and azimuth of stars of certain magnitude within a time period
+    """
+    thob.date = date+time #both should be strings in format '1984/5/30 16:22:56'
+    body =[]
+    for i in len(data):
+        dataline = data['Name'][i]+'f'+data['RAJ2000'][i]+data['DEJ2000'][i]+data['Vmag'][i]
+        body = ephem.readdb(dataline)
+        body = ephem.FixedBody(ra=ra,dec=dec)
+        body.compute(thob)
+        risetime = body.next_rising(start='date')
+        settime = body.next_setting(start='date')
+        if risetime > starttime and settime < endtime and body.mag > mag:
+            body.append()
+    az = body.az
+    alt = body.alt
+    return risetime, settime, az, alt

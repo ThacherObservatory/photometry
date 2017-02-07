@@ -38,12 +38,14 @@ def filter_data(data,datetime, mag, alt, az, VI):
     altl = []
     magl = []
     VIl = []
+    ra = []
+    dec = []
     for i in range(len(data)-1):
-        dataline = data['Name'][i]+','+'f'+','+data['RAJ2000'][i]+','+data['DEJ2000'][i]+','+str(data['Vmag'][i])
+        dataline = data['SimbadName'][i]+','+'f'+','+data['RAJ2000'][i]+','+data['DEJ2000'][i]+','+str(data['Vmag'][i])
         body = ephem.readdb(dataline)
         body.compute(thob)
-        if alt[0] < body.alt < alt[1] and \
-            az[0] < body.az < az[1] and \
+        if np.radians(alt[0]) < body.alt < np.radians(alt[1]) and \
+            np.radians(az[0]) < body.az < np.radians(az[1]) and \
             mag[0]< body.mag < mag[1] and \
             VI[0]< data['V-I'][i] <VI[1]:
             namel.append(body.name)
@@ -51,7 +53,9 @@ def filter_data(data,datetime, mag, alt, az, VI):
             altl.append(body.alt)
             magl.append(body.mag)
             VIl.append(data['V-I'])
-    filtered_data = pd.DataFrame.from_dict(dict([('Name',namel), ('Az',azl), ('Alt',altl),('Mag',magl),('V-I',VIl)]))
+            ra.append(body.ra)
+            dec.append(body.dec)
+    filtered_data = pd.DataFrame.from_dict(dict([('Name',namel), ('Az',azl), ('Alt',altl),('Ra',ra),('Dec',dec),('Mag',magl),('V-I',VIl)]))
     return filtered_data
 
-filter_data(data2009,"17 Feb 05 16:22:56",[10,15],[0.5,1],[3,6],[0.2,1])
+filtered_data = filter_data(data2009,"17 Feb 07 20:00:00",[9,11],[20,80],[0,360],[0.5,1])

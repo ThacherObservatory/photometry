@@ -274,8 +274,9 @@ def get_files(dir="/Users/jonswift/Astronomy/EBs/Data/MINERVA/2015Oct15/",
         for file in files:
             inname  = file.replace("'","\\'")
             outname =  file.replace("'","")
-            mvcmd = "mv "+inname+" "+outname
-            os.system(mvcmd)
+            if inname != outname:
+                mvcmd = "mv "+inname+" "+outname
+                os.system(mvcmd)
 
         files = [file.replace("'","") for file in files]
             

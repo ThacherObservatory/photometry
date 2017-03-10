@@ -132,7 +132,7 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
 
 
             
-        # Do some string handling
+        # Do some string handlings
         fname = file.split('/')[-1]
         outdir = file.split(fname)[0]+'astrometry'
         datadir = file.split(fname)[0]
@@ -250,7 +250,7 @@ def done_in(tmaster):
 #----------------------------------------------------------------------#
 
 def get_files(dir="/Users/jonswift/Astronomy/EBs/Data/MINERVA/2015Oct15/",
-              prefix='',tag='',suffix='.fits'):
+              prefix='',tag='',suffix='.fits',clean=True):
     
     """
     Overview:
@@ -269,6 +269,17 @@ def get_files(dir="/Users/jonswift/Astronomy/EBs/Data/MINERVA/2015Oct15/",
     
     fct = len(files)
 
+    
+    if clean:
+        for file in files:
+            inname  = file.replace("'","\\'")
+            outname =  file.replace("'","")
+            if inname != outname:
+                mvcmd = "mv "+inname+" "+outname
+                os.system(mvcmd)
+
+        files = [file.replace("'","") for file in files]
+            
     return files,fct
 
 

@@ -14,7 +14,7 @@ from scipy import interpolate
 from time import strptime, gmtime, mktime
 from astropy.coordinates import Angle
 import astropy.units as u
-# Yao wins!!!!
+
 data2013 = pd.read_table('/Users/sara/python/photometry/Landolt_Standards_2013.txt',sep='|', header=62)
 data2009 = pd.read_table('/Users/sara/python/photometry/Landolt_Standards_2009.txt',sep='|', header=66)
 

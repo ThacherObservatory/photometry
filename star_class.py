@@ -8,23 +8,40 @@ from time import strptime, gmtime, mktime
 from astropy.coordinates import Angle
 import astropy.units as u
 
-class observatory(ephem.observe):
+class Observatory(ephem.Observer):
 
-    def __init__(self,long,lat,elev,dir):
-        super(Observatory,self).__init__()
-        self.long = -119.1773417
-        self.lat = 34.467028
-        self.elev = 504.4
+    def __init__(self, long=-119.1773417, lat=34.467028, elev=504.4,
+                 dir="./"):
+        """
+        Observatory object that utilizes pyephem's Observer class to create a
+        custom observatory given a longitude, latitude, and elevation
+
+        long: float (degrees)
+            the longitude of your observatory
+        lat: float (degrees)
+            the latitude of your observatory
+        elev: float (meters)
+            the elevation from sea level of your observatory
+        dir: str
+            the path which contains any files you may read in
+            * defaulted to your present working directory
+        """
+        super(Observatory, self).__init__()
+        self.long = long
+        self.lat = lat
+        self.elev = elev
+
         self.data2013 = pd.read_table(dir+'Landolt_Standards_2013.txt',sep='|', header=62)
         self.data2009 = pd.read_table(dir+'Landolt_Standards_2009.txt',sep='|', header=66)
 
     def findStandardRADec(RA,Dec,dist=None,**kwargs):
         """
-        *Args:
-        1. ra_dec: specify ra and dec:
+        Parameters:
+        1. ra_dec: specify right ascension and declination:
             if dist=None, specify the range of ra and dec, list, in dms,[min_ra,max_ra,min_dec,max_dec]
             else, one values of ra and dec, list, in dms, [ra,dec]
-        2. dist specified in dms string format, default is None
+        2. dist specified in degrees-minutes-seconds string format
+            * default is None
 
         **Kwargs:
         1. mag: list of 2 ints, in mags
@@ -34,6 +51,7 @@ class observatory(ephem.observe):
         Returns:
         Pandas data frame opf standard stars meeting the specified criteria
         """
+        return
 
     def findStandardAltAz(Alt,Az,):
         """
@@ -48,4 +66,4 @@ class observatory(ephem.observe):
         Returns:
         Pandas data frame opf standard stars meeting the specified criteria
         """
-        
+        return

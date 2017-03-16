@@ -15,8 +15,8 @@ from time import strptime, gmtime, mktime
 from astropy.coordinates import Angle
 import astropy.units as u
 
-data2013 = pd.read_table('/Users/sara/python/photometry/Landolt_Standards_2013.txt',sep='|', header=62)
-data2009 = pd.read_table('/Users/sara/python/photometry/Landolt_Standards_2009.txt',sep='|', header=66)
+data2013 = pd.read_table('/Users/yaosarayin/python/photometry/Landolt_Standards_2013.txt',sep='|', header=62)
+data2009 = pd.read_table('/Users/yaosarayin/python/photometry/Landolt_Standards_2009.txt',sep='|', header=66)
 
 thob = ephem.Observer()
 thob.long = ephem.degrees("-119.1773417")
@@ -76,6 +76,7 @@ def filter_data(data,datetime, mag=False, alt=False, az=False, VI=False, ra_dec=
                 if data[min_ra<data['RAJ2000'][i]<max_ra and min_dec<data['DEJ2000'][i]<max_dec]: selected.append(i)
         except:
             print 'ValueError: ra_dec must be list of 4 values [min_ra,max_ra,min_dec,max_dec] if dist==False'
+    else: selected = range(len(data)-1)
     data = data.loc[selected,:]
     for i in selected:
         dataline = data['SimbadName'][i]+','+'f'+','+data['RAJ2000'][i]+','+data['DEJ2000'][i]+','+str(data['Vmag'][i])
@@ -93,7 +94,8 @@ def filter_data(data,datetime, mag=False, alt=False, az=False, VI=False, ra_dec=
             namel.append(body.name);azl.append(body.az);altl.append(body.alt)
             magl.append(body.mag);VIl.append(data['V-I'])
             ral.append(radian_to_dms(body.ra));decl.append(radian_to_dms(body.dec))
-    filtered_data = pd.DataFrame.from_dict(dict([('Name',namel), ('Az',azl), ('Alt',altl),('Ra',ra),('Dec',dec),('Mag',magl),('V-I',VIl)]))
+    filtered_data = pd.DataFrame.from_dict(dict([('Name',namel), ('Az',azl), ('Alt',altl),('Ra',ral),('Dec',decl),('Mag',magl),('V-I',VIl)]))
     return filtered_data
 
-#filtered_data = filter_data(data2009,"17 Feb 15 20:00:00",ra_dec=['13:26:14','-07:28:09'],dist=['10:05:00','22:00:00'])
+#filtered_data = filter_data(data2009,"17 Mar 16 20:00:00",ra_dec=['13:26:14','-07:28:09'],dist=['10:05:00','22:00:00'])
+#filtered_data = filter_data(data2009,"17 Mar 16 20:00:00",mag=[8,12],alt=[20,80],az=[0,360],VI=[0.5,1])

@@ -8,7 +8,7 @@ from time import strptime, gmtime, mktime
 from astropy.coordinates import Angle
 import astropy.units as u
 
-class Observatory(ephem.Observer, ephem.Sun):
+class Observatory(ephem.Observer):
 
     def __init__(self, long=-119.1773417, lat=34.467028, elev=504.4,
                  dir="./"):

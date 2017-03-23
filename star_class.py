@@ -30,15 +30,14 @@ class Observatory(ephem.Observer):
         self.long = long
         self.lat = lat
         self.elev = elev
-
         self.data2013 = pd.read_table(dir+'Landolt_Standards_2013.txt',sep='|', header=62)
         self.data2009 = pd.read_table(dir+'Landolt_Standards_2009.txt',sep='|', header=66)
 
     def findStandardRADec(RA,Dec,dist=None,**kwargs):
         """
         Parameters:
-        1. ra_dec: specify right ascension and declination:
-            if dist=None, specify the range of ra and dec, list, in dms,[min_ra,max_ra,min_dec,max_dec]
+        1. RA/Dec: specify right ascension and declination:
+            if dist=None, specify the range of ra and dec, list, in dms,[min_ra,max_ra],[min_dec,max_dec]
             else, one values of ra and dec, list, in dms, [ra,dec]
         2. dist specified in degrees-minutes-seconds string format
             * default is None
@@ -51,6 +50,18 @@ class Observatory(ephem.Observer):
         Returns:
         Pandas data frame opf standard stars meeting the specified criteria
         """
+        data = kwargs.get('data', d=self.data2009)
+        namel = []; magl = []; VIl = []; ral = []; decl = []; selected=[]
+        if dist:
+            ra,ra_dist = Angle([RA, dist[0]], unit = u.hour); dec, dec_dist = Angle([Dec, dist[1]], unit = u.degree)
+            for i in range(len(data)-1):
+                if ((ra - ra_dist) < Angle(data['RAJ2000'][i], unit = u.hour) < (ra + ra_dist)) and \
+                        ((dec-dec_dist) < Angle(data['DEJ2000'][i], unit=u.degree) < (dec + dec_dist)): selected.append(i)
+        else:
+            min_ra,max_ra = Angle([RA[0],RA[1]], unit = u.hour)
+            min_dec,max_dec = Angle([Dec[0], Dec[1]], unit = u.degree)
+            for i in range(len(data-1)):
+                if data[min_ra < data['RAJ2000'][i] < max_ra and min_dec < data['DEJ2000'][i] < max_dec]: selected.append(i)
         return
 
     def findStandardAltAz(Alt,Az,):

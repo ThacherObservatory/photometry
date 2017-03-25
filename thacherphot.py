@@ -1,4 +1,4 @@
-import sys,string,os,time,pickle,pdb,glob,astropy
+import sys,string,os,time,pickle,pdb,glob,astropy,os
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,32 +38,37 @@ import matplotlib.patheffects as PathEffects
 #  - In "lightcurve" handle choice of reference stars more intelligently
 #  - Fix inputs for lightcurve to reflect new flexibility of the routine
 #  - Add aperture category to info dictionary in batch_phot
-#  - Have optimal aperture return a dictionary
 #
 # 
-# 3/10/14: Created by Jonathan Swift and Michael Bottom.   
-# 3/12/14: - Output directory option added for routines with output.
+#  3/10/14 - Created by Jonathan Swift and Michael Bottom.   
+#  3/12/14 - Output directory option added for routines with output.
 # (jswift) - Added readnoise calculation option in master_bias
 #          - Added "done_in" time keeping routine.
 #          - Fixed "choose_refs" so that it properly disconnects
 #            from plotting device and returns RAs and Decs of all 
 #            sources
 #          - Updated output from routines to minimize recalculations
-# 3/17/14: - Implemented flat field option in do_phot and batch_phot
+#  3/17/14 - Implemented flat field option in do_phot and batch_phot
 # (jswift) - Option to use specified aperture in all images in dataset
 #            instead of SNR optimization.
-# 6/25/14  - Added options to do_astrometry to allow for finer tuned 
+#  6/25/14 - Added options to do_astrometry to allow for finer tuned 
 # (jswift)   solutions.
 #          - Added option to specify skyradii for do_phot and 
 #            batch_phot.
 #          - New annotation for bias, readnoise and dark images.
 #          - Fixed subplot bug in "lightcurve" to allow for large 
 #            number of reference stars.
-# 6/13/16  - Updated output of optimal_aperture
+#  6/13/16 - Updated output of optimal_aperture
 # (jswift)
 # 12/15/16 - Cleaned up import section of module
 #          - Use tqdm instead of "done_in" to monitor progress in read
 #            noise calculation
+#  3/24/17 - Put in check for astrometry.net installation
+# (jswift) - Changed default lat/lon/elevation to Thacher Observatory
+#          - Added get_info_path to check for the data diretories
+#            containing the Pickles stellar templates and transmission
+#            curves for throughput measurements.
+#
 #----------------------------------------------------------------------
 
 # For interactive plotting
@@ -97,7 +102,10 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
 
     # Default directory for astrometry.net
     astrometrydotnet_dir = "/usr/local/astrometry"
-
+    if not os.path.isdir(astrometrydotnet_dir):
+        print astrometrydotnet_dir+' path does not exist'
+        return
+    
     for file in files:
         # Allow for graceful opt out...
         print("Press any key to quit, continuing in 1 second...")
@@ -129,8 +137,6 @@ def do_astrometry(files,clobber=False,pixlo=0.1,pixhi=1.5,ra=None,dec=None,objec
             RAdeg = ra
             DECdeg = dec
             guess = True
-
-
             
         # Do some string handlings
         fname = file.split('/')[-1]
@@ -988,7 +994,7 @@ def optimal_aperture(x,y,image,skyrad,aperture=None,use_old=False):
 #----------------------------------------------------------------------#
 def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
                dark=None,bias=None,flat=None,ra=None,dec=None,
-               lat='34 08 09.96',lon='-118 07 34.47',elevation=100.0,
+               lat='34 28 00.5',lon='-119 10 38.5',elevation=494.7,
                doplot=False,outdir='./',name='integrand',
                camera='U16m',filter='V',brightest=False,nearest=True,
                network='swift'):
@@ -999,12 +1005,8 @@ def total_flux(file,obsc=0.47,gain=1.7,SpT=None,skyrad=[30,40],mag=None,
             "exptime":[], "jd":[], "snr":[], "chisq":[], "aperture":[],
              "xpos":[], "ypos":[]}
 
-    if network == 'swift':
-        dpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/TransCurves/'    
-        stpath = '/Users/jonswift/Astronomy/Caltech/MINERVA/Observing/Throughput/StellarTemplates/'
-    if network == 'katie':
-        dpath = '/Users/ONeill/astronomy/data/TransCurves/'
-        stpath = '/Users/ONeill/astronomy/data/StellarTemplates/'
+
+    dpath, stpath = get_info_path()
         
     obs = ephem.Observer()
     obs.lat = lat
@@ -1686,6 +1688,38 @@ def lightcurve(info,title='Light Curve',
     
     return jd, lc, err, exptime
 
+
+def get_info_path(verbose=False):
+    '''
+    Routine to check for the existence of the necessary directories of 
+    data to do throughput calculations
+    '''
+    a = sys.path
+    b = None
+
+    for dir in a:
+        if dir[-11:] == '/photometry': b=dir
+
+    if not b:
+        b = '.'
+
+    contents =  os.listdir(b)
+
+    dpath = None
+    stpath = None
+    for c in contents:
+        if c == 'PhotInfo':
+            dpath = b+'/'+c
+        if c == 'StellarTemplates':
+            stpath = b+'/'+c
+
+    if verbose:
+        if not dpath:
+            print 'PhotInfo directory not accessible'
+        if not stpath:
+            print 'StellarTemplates directory not available'
+
+    return dpath, stpath
 
 
 def seeing(info):

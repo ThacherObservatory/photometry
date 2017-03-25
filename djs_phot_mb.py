@@ -37,7 +37,7 @@ import pdb
 #   invvar:     Inverse variance image, for computing the errors FLERR
 #   ----------- FOR CENTERING ALGORITHM
 #   calg:       Centering algorithm.  Choose from iweight, gauss1, gauss2, none.
-#                 iweight = intensiAstronomy/Caltech/MINERVA/Observing/Photometry/ty-weighted center, computed independently
+#                 iweight = intensity-weighted center, computed independently
 #                           in both X and Y
 #                 gauss1  = gaussian fit, including a constant term, computed
 #                           independently in both X and Y

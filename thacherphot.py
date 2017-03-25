@@ -38,6 +38,9 @@ import matplotlib.patheffects as PathEffects
 #  - In "lightcurve" handle choice of reference stars more intelligently
 #  - Fix inputs for lightcurve to reflect new flexibility of the routine
 #  - Add aperture category to info dictionary in batch_phot
+#  - Consolidate djs routines into this module
+#  - Update djs routines to fit 1D and 2D Gaussian to star image.
+#  - Replace use of fitgaussian with example at end of code
 #
 # 
 #  3/10/14 - Created by Jonathan Swift and Michael Bottom.   
@@ -1726,3 +1729,14 @@ def seeing(info):
 
     pass
 
+
+# http://stackoverflow.com/questions/21566379/fitting-a-2d-gaussian-function-using-scipy-optimize-curve-fit-valueerror-and-m
+def Gaussian2D((x, y), amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
+    xo = float(xo)
+    yo = float(yo)    
+    a = (np.cos(theta)**2)/(2*sigma_x**2) + (np.sin(theta)**2)/(2*sigma_y**2)
+    b = -(np.sin(2*theta))/(4*sigma_x**2) + (np.sin(2*theta))/(4*sigma_y**2)
+    c = (np.sin(theta)**2)/(2*sigma_x**2) + (np.cos(theta)**2)/(2*sigma_y**2)
+    g = offset + amplitude*np.exp( - (a*((x-xo)**2) + 2*b*(x-xo)*(y-yo) 
+                            + c*((y-yo)**2)))
+    return g.ravel()

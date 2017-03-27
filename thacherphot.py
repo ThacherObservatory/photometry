@@ -1281,6 +1281,9 @@ def exponential(params, *args):
 
 def do_phot(file,ras,decs,aperture=None,skyrad=np.array([32,42]),dark=None,
             bias=None,flat=None):
+    '''
+    What does this do!!!!
+    '''
     
 # Get image and header
     image, header = fits.getdata(file, 0, header=True)
